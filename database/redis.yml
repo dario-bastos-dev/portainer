@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis/redis-stack:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    volumes:
+      - redis_data_service:/data
+      - /root/portainer/redis/redis.conf:/redis-stack.conf:ro
+    networks:
+      - dev-network
+      - traefik-public
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.redis.rule=Host(`redis.<YOUR_DOMAIN>`)
+        - traefik.http.routers.redis.entrypoints=websecure
+        - traefik.http.routers.redis.service=redis
+        - traefik.http.routers.redis.tls.certresolver=letsencrypt
+
+        # --- Serviço ---
+        - traefik.http.services.redis.loadbalancer.server.port=8001
+        - traefik.http.services.redis.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  redis_data_service:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true

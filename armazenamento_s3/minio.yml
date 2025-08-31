@@ -1,0 +1,51 @@
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    command: server /data --console-address ":9001"
+    networks:
+      - traefik_public
+      - dev-network
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: https://miniofront.<YOUR_DOMAIN>
+      MINIO_SERVER_URL: https://minioback.<YOUR_DOMAIN>
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+          limits:
+            cpus: '0.5'
+            memory: 1024M
+      labels:
+        - traefik.enable=true
+        #SSL 2 endereço publico do Minio
+        - traefik.http.routers.minio_s3.rule=Host(`minioback.<YOUR_DOMAIN>`)
+        - traefik.http.routers.minio_s3.tls.certresolver=le
+        - traefik.http.routers.minio_s3.entrypoints=websecure
+        - traefik.http.routers.minio_s3.tls=true
+        - traefik.http.routers.minio_s3.service=minio_s3
+        - traefik.http.services.minio_s3.loadbalancer.server.port=9000
+        #SSL 1 endereço console do minio
+        - traefik.http.routers.minio_console.rule=Host(`miniofront.<YOUR_DOMAIN>`)
+        - traefik.http.routers.minio_console.tls.certresolver=le
+        - traefik.http.routers.minio_console.entrypoints=websecure
+        - traefik.http.routers.minio_console.tls=true
+        - traefik.http.routers.minio_console.service=minio_console
+        - traefik.http.services.minio_console.loadbalancer.server.port=9001
+
+volumes:
+  minio_data:
+    external: true
+
+networks:
+  traefik_public:
+    external: true
+  dev-network:
+    external: true

@@ -1,0 +1,207 @@
+services:
+  n8n-redis:
+    image: redis:8-alpine
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}" 
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dev-services
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+
+  n8n-main:
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    command: start
+    environment:
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - NODE_ENV=production
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      
+      # Execution Mode
+      - EXECUTIONS_MODE=queue
+      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+      
+      # Database Configuration
+      - DB_TYPE=postgresdb
+      - DB_TABLE_PREFIX=n8n_
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Redis Configuration
+      - QUEUE_BULL_REDIS_HOST=n8n-redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_DB=0
+      - QUEUE_BULL_PREFIX=n8n_
+      
+      # Security
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      
+      # Additional Settings
+      - N8N_LOG_LEVEL=info
+      - N8N_METRICS=true
+      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
+      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
+      - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
+
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - TZ=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - dev-network
+      - traefik-public
+    depends_on: 
+      - n8n-redis
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.n8n-main.rule=Host(`n8n.<YOUR_DOMAIN>`)
+        - traefik.http.routers.n8n-main.entrypoints=websecure
+        - traefik.http.routers.n8n-main.service=n8n-main
+        - traefik.http.routers.n8n-main.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.n8n-main.loadbalancer.server.port=5678
+        - traefik.http.services.n8n-main.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  n8n-worker-1:
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    image: n8nio/n8n:latest
+    command: worker --concurrency=${WORKER_CONCURRENCY}
+    environment:
+      # Execution Mode
+      - EXECUTIONS_MODE=queue
+      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_GRACEFUL_SHUTDOWN_TIMEOUT=30
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+      
+      # Database Configuration
+      - DB_TYPE=postgresdb
+      - DB_TABLE_PREFIX=n8n_
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Redis Configuration
+      - QUEUE_BULL_REDIS_HOST=n8n-redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_DB=${REDIS_DB}
+      
+      # Security
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      
+      # Additional Settings
+      - N8N_LOG_LEVEL=info
+      - N8N_METRICS=true
+      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
+      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
+      - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
+
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - TZ=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - dev-network
+    depends_on: 
+      - n8n-redis
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      
+  n8n-webhook-1:
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    image: n8nio/n8n:latest
+    command: webhook
+    environment:
+      # Execution Mode
+      - EXECUTIONS_MODE=queue
+      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
+      - QUEUE_HEALTH_CHECK_ACTIVE=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+      
+      # Database Configuration
+      - DB_TYPE=postgresdb
+      - DB_TABLE_PREFIX=n8n_
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      
+      # Redis Configuration
+      - QUEUE_BULL_REDIS_HOST=n8n-redis
+      - QUEUE_BULL_REDIS_PORT=6379
+      - QUEUE_BULL_REDIS_DB=${REDIS_DB}
+      
+      # Security
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      
+      # Additional Settings
+      - N8N_LOG_LEVEL=info
+      - N8N_METRICS=true
+      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
+      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
+      - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
+
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - TZ=${GENERIC_TIMEZONE}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - dev-network
+    depends_on: 
+      - n8n-redis
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  redis_data:
+  n8n_data:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true

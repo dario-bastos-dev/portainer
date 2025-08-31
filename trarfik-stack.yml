@@ -1,0 +1,43 @@
+services:
+  traefik:
+    image: traefik:latest # Pode manter a latest agora
+    command:
+      # --- Ponto de Entrada (EntryPoints) ---
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      
+      # --- Provedor Swarm (A MUDANÇA ESTÁ AQUI) ---
+      - "--providers.swarm=true"
+      - "--providers.swarm.exposedByDefault=false"
+      - "--providers.swarm.network=traefik-public"
+      
+      # --- Resolvedor de Certificados (Let's Encrypt) ---
+      - "--certificatesresolvers.letsencrypt.acme.email=<YOUR_EMAIL>"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      
+      # --- Middleware de Redirecionamento Global ---
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik-ssl-certs:/letsencrypt" # Volume para os certificados
+    networks:
+      - traefik-public
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+
+networks:
+  traefik-public:
+    external: true
+
+volumes:
+  traefik-ssl-certs:
+    driver: local

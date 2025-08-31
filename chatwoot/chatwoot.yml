@@ -1,0 +1,186 @@
+services:
+  chat-redis:
+    image: redis:8-alpine
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}" 
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data_chat:/data
+    networks:
+      - dev-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  chatwoot:
+    image: chatwoot/chatwoot:v4.5.2-ce
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    command: bundle exec rails s -p 3000 -b 0.0.0.0
+    entrypoint: docker/entrypoints/rails.sh
+    environment:
+      # Configurações Gerais
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY_BASE}
+      - FRONTEND_URL=https://chat.<YOUR_DOMAIN>
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - DEFAULT_LOCALE=pt-BR
+      - ENABLE_ACCOUNT_SIGNUP=true
+
+      # Performance
+      - SIDEKIQ_CONCURRENCY=10
+      - RACK_TIMEOUT_SERVICE_TIMEOUT=0
+      - RAILS_MAX_THREADS=5
+      - WEB_CONCURRENCY=2
+      - ENABLE_RACK_ATTACK=false
+      - WEBHOOKS_TRIGGER_TIMEOUT=40
+      - RAILS_LOG_LEVEL=info
+
+      #Login com o Google
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_ID}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_SECRET}
+      - GOOGLE_OAUTH_CALLBACK_URL=${GOOGLE_URL}
+
+      # Banco de Dados
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=chatwoot
+      - POSTGRES_USERNAME=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+      # Redis
+      - REDIS_URL=redis://chat-redis:6379/0
+      
+      # MinIO (Armazenamento)
+      - ACTIVE_STORAGE_SERVICE=s3_compatible
+      - STORAGE_BUCKET_NAME=chatwoot
+      - STORAGE_ACCESS_KEY_ID=${MINIO_ACCESS_KEY_ID}
+      - STORAGE_SECRET_ACCESS_KEY=${MINIO_SECRET_ACCESS_KEY}
+      - STORAGE_REGION=minio
+      - STORAGE_ENDPOINT=http://caminho-para-minio
+
+      # SMTP (E-mail Externo) - Descomente quando necessário
+      # Servidor de Email Gmail
+      # - MAILER_SENDER_EMAIL=Chatwoot <seuemail@gmail.com>
+      # - SMTP_DOMAIN=gmail.com
+      # - SMTP_ADDRESS=smtp.gmail.com
+      # - SMTP_PORT=587
+      # - SMTP_USERNAME=seuemail@gmail.com
+      # - SMTP_PASSWORD=suasenha
+      # - SMTP_AUTHENTICATION=login
+      # - SMTP_ENABLE_STARTTLS_AUTO=true
+      # - SMTP_OPENSSL_VERIFY_MODE=peer
+      # - MAILER_INBOUND_EMAIL_DOMAIN=seuemail@gmail.com
+    volumes:
+      - chatwoot_data:/app/storage
+      - chatwoot_public:/app/public
+      - chatwoot_mailers:/app/app/views/mailers
+    networks:
+      - dev-network
+      - traefik-public
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.chatwoot.rule=Host(`chat.<YOUR_DOMAIN>`)
+        - traefik.http.routers.chatwoot.entrypoints=websecure
+        - traefik.http.routers.chatwoot.service=chatwoot
+        - traefik.http.routers.chatwoot.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.chatwoot.loadbalancer.server.port=3000
+        - traefik.http.services.chatwoot.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      
+
+  sidekiq:
+    image: chatwoot/chatwoot:v4.5.2-ce
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    environment:
+      # Configurações Gerais
+      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY_BASE}
+      - FRONTEND_URL=https://chat.dariobastos.me
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - INSTALLATION_ENV=docker
+      - DEFAULT_LOCALE=pt-BR
+      - ENABLE_ACCOUNT_SIGNUP=true
+
+      # Performance
+      - SIDEKIQ_CONCURRENCY=10
+      - RACK_TIMEOUT_SERVICE_TIMEOUT=0
+      - RAILS_MAX_THREADS=5
+      - WEB_CONCURRENCY=2
+      - ENABLE_RACK_ATTACK=false
+      - WEBHOOKS_TRIGGER_TIMEOUT=40
+      - RAILS_LOG_LEVEL=info
+
+      #Login com o Google
+      - GOOGLE_OAUTH_CLIENT_ID=${GOOGLE_ID}
+      - GOOGLE_OAUTH_CLIENT_SECRET=${GOOGLE_SECRET}
+      - GOOGLE_OAUTH_CALLBACK_URL=${GOOGLE_URL}
+
+      # Banco de Dados
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DATABASE=chatwoot
+      - POSTGRES_USERNAME=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+      # Redis
+      - REDIS_URL=redis://chat-redis:6379/0
+      
+      # MinIO (Armazenamento)
+      - ACTIVE_STORAGE_SERVICE=s3_compatible
+      - STORAGE_BUCKET_NAME=chatwoot
+      - STORAGE_ACCESS_KEY_ID=${MINIO_ACCESS_KEY_ID}
+      - STORAGE_SECRET_ACCESS_KEY=${MINIO_SECRET_ACCESS_KEY}
+      - STORAGE_REGION=minio
+      - STORAGE_ENDPOINT=http://minio:9000
+      
+      # SMTP (E-mail Externo) - Descomente quando necessário
+      # Servidor de Email Gmail
+      # - MAILER_SENDER_EMAIL=Chatwoot <seuemail@gmail.com>
+      # - SMTP_DOMAIN=gmail.com
+      # - SMTP_ADDRESS=smtp.gmail.com
+      # - SMTP_PORT=587
+      # - SMTP_USERNAME=seuemail@gmail.com
+      # - SMTP_PASSWORD=suasenha
+      # - SMTP_AUTHENTICATION=login
+      # - SMTP_ENABLE_STARTTLS_AUTO=true
+      # - SMTP_OPENSSL_VERIFY_MODE=peer
+      # - MAILER_INBOUND_EMAIL_DOMAIN=seuemail@gmail.com
+    volumes:
+      - chatwoot_data:/app/storage
+      - chatwoot_public:/app/public
+      - chatwoot_mailers:/app/app/views/mailers
+    networks:
+      - dev-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  chatwoot_data:
+  chatwoot_public:
+  chatwoot_mailers:
+  redis_data_chat:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
+      

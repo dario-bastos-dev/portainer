@@ -1,0 +1,41 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4.2-rc-management-alpine
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - dev-network
+      - traefik-public
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+
+        # --- Roteador para a Interface Web (UI) ---
+        - traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.<YOUR_DOMAIN>`)
+        - traefik.http.routers.rabbitmq.entrypoints=websecure
+        - traefik.http.routers.rabbitmq.service=rabbitmq
+        - traefik.http.routers.rabbitmq.tls.certresolver=letsencrypt
+        
+        # --- Serviço da Interface Web (UI) ---
+        - traefik.http.services.rabbitmq.loadbalancer.server.port=15672
+        - traefik.http.services.rabbitmq.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: 
+          - node.role == manager
+
+volumes:
+  rabbitmq_data:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
