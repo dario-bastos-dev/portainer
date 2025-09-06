@@ -1,0 +1,57 @@
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100m'
+        max-file: '10'
+    environment:
+      - WHATSAPP_API_PORT=3000
+      - WHATSAPP_DEFAULT_ENGINE=GOWS
+      - WHATSAPP_DASHBOARD_ENABLED=true
+      - WAHA_DASHBOARD_USERNAME=${WAHA_USERNAME}
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_PASSWORD}
+      - WHATSAPP_SWAGGER_ENABLED=true
+      - WHATSAPP_SWAGGER_USERNAME=${WAHA_USERNAME}
+      - WHATSAPP_SWAGGER_PASSWORD=${WAHA_PASSWORD}
+      - WAHA_PRINT_QR=False
+      - WHATSAPP_HOOK_URL=https://waha.<YOUR_DOMAIN>/webhook
+      - WHATSAPP_HOOK_EVENTS=session.status,message,message.reaction
+      - TZ=America/Sao_Paulo
+    volumes:
+      - data_waha_sessions:/app/.sessions
+      - data_waha_media:/app/.media
+    networks:
+      - traefik-public
+      - dev-network
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.waha.rule=Host(`waha.<YOUR_DOMAIN>`)
+        - traefik.http.routers.waha.entrypoints=websecure
+        - traefik.http.routers.waha.service=waha
+        - traefik.http.routers.waha.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.waha.loadbalancer.server.port=3000
+        - traefik.http.services.waha.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  data_waha_sessions:
+  data_waha_media:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
