@@ -1,15 +1,18 @@
 services:
   traefik:
-    image: traefik:latest # Pode manter a latest agora
+    image: traefik:latest
     command:
       # --- Ponto de Entrada (EntryPoints) ---
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       
-      # --- Provedor Swarm (A MUDANÇA ESTÁ AQUI) ---
+      # --- Provedor Swarm ---
       - "--providers.swarm=true"
       - "--providers.swarm.exposedByDefault=false"
       - "--providers.swarm.network=traefik-public"
+
+      # --- HABILITAR API E DASHBOARD ---
+      - "--api.dashboard=true"
       
       # --- Resolvedor de Certificados (Let's Encrypt) ---
       - "--certificatesresolvers.letsencrypt.acme.email=<YOUR_EMAIL>"
@@ -25,7 +28,7 @@ services:
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "traefik-ssl-certs:/letsencrypt" # Volume para os certificados
+      - "traefik-ssl-certs:/letsencrypt"
     networks:
       - traefik-public
     deploy:
@@ -33,6 +36,19 @@ services:
       placement:
         constraints:
           - node.role == manager
+      abels:
+      # Habilita o Traefik para ele mesmo
+      - "traefik.enable=true"
+      
+      # Roteador HTTP para o Dashboard
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.<YOUR_DOMAIN>`)" # <-- Escolha seu subdomínio aqui
+      - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+      - "traefik.http.routers.traefik-dashboard.service=api@internal" # Serviço interno especial do Traefik
+      - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt" # Usa seu resolvedor de SSL
+      
+      # Middleware de Autenticação
+      - "traefik.http.routers.traefik-dashboard.middlewares=auth-dashboard@docker"
+      - "traefik.http.middlewares.auth-dashboard.basicauth.users=<PASSWORD_HASH>" # <-- Gere uma senha criptografada com htpasswd
 
 networks:
   traefik-public:

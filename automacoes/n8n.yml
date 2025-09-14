@@ -3,12 +3,10 @@ services:
     image: redis:8-alpine
     hostname: "{{.Service.Name}}.{{.Task.Slot}}" 
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - dev-services
+      - dev-network
     deploy:
       mode: replicated
       replicas: 1
