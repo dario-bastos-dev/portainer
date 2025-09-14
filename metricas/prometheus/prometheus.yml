@@ -8,3 +8,14 @@ scrape_configs:
     static_configs:
       - targets:
           - 'localhost:9090'
+
+  - job_name: 'n8n'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - 'n8n.studiotriplea.com.br'
+  
+  - job_name: 'traefik'
+    static_configs:
+      - targets:
+          - 'traefik:8080'

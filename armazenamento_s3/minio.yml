@@ -4,7 +4,7 @@ services:
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     command: server /data --console-address ":9001"
     networks:
-      - traefik_public
+      - traefik-public
       - dev-network
     volumes:
       - minio_data:/data
@@ -45,7 +45,7 @@ volumes:
     external: true
 
 networks:
-  traefik_public:
+  traefik-public:
     external: true
   dev-network:
     external: true
