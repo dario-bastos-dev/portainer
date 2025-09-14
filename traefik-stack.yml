@@ -11,8 +11,13 @@ services:
       - "--providers.swarm.exposedByDefault=false"
       - "--providers.swarm.network=traefik-public"
 
-      # --- HABILITAR API E DASHBOARD ---
+      # --- API e Dashboard ---
       - "--api.dashboard=true"
+
+       # --- Observabilidade ---
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
       
       # --- Resolvedor de Certificados (Let's Encrypt) ---
       - "--certificatesresolvers.letsencrypt.acme.email=<YOUR_EMAIL>"
@@ -36,14 +41,14 @@ services:
       placement:
         constraints:
           - node.role == manager
-      abels:
+      labels:
       # Habilita o Traefik para ele mesmo
       - "traefik.enable=true"
       
       # Roteador HTTP para o Dashboard
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.<YOUR_DOMAIN>`)"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`primary.<YOUR_DOMAIN>`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-      - "traefik.http.routers.traefik-dashboard.service=api@internal" # Serviço interno especial do Traefik
+      - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       
       # Middleware de Autenticação
