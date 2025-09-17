@@ -38,7 +38,7 @@ Dentro do arquivo `.env`, defina os valores corretos para as variáveis de confi
 1. Crie uma database em seu banco Postgres chamada *chatwoot*
 2. Acesse containers, na barra lateral do Portainer
 3. Selecione o container do app chatwoot
-4. Cole o seguinte comando `bundle exec rails  db:chatwoot_prepare`
+4. Cole o seguinte comando `bundle exec rails db:chatwoot_prepare`
 
 ### Acesso e monitoramento
 

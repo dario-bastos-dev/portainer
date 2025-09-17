@@ -116,6 +116,7 @@ services:
       - QUEUE_BULL_REDIS_HOST=n8n-redis
       - QUEUE_BULL_REDIS_PORT=6379
       - QUEUE_BULL_REDIS_DB=${REDIS_DB}
+      - QUEUE_BULL_PREFIX=n8n_
       
       # Security
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
@@ -168,6 +169,7 @@ services:
       - QUEUE_BULL_REDIS_HOST=n8n-redis
       - QUEUE_BULL_REDIS_PORT=6379
       - QUEUE_BULL_REDIS_DB=${REDIS_DB}
+      - QUEUE_BULL_PREFIX=n8n_
       
       # Security
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}

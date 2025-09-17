@@ -54,10 +54,9 @@ Dentro do arquivo `.env`, defina os valores corretos para as variáveis de confi
 2. Selecione o container do krayin
 3. Cole o seguinte comando `composer require krayin/rest-api`
 4. Acesse os Helpers do sistema `cd packages/Webkul/Email/src/Helpers && ls`
-5. Verifique se possui um aquivo chamado **HtmlFilter.php**, se ele estiver com o "f" de "Filter" minúsculo, então pode pular para a etapa 8
-6. Altere o nome do aquivo com `mv packages/Webkul/Email/src/Helpers/HtmlFilter.php packages/Webkul/Email/src/Helpers/Htmlfilter.php`
-7. Acesse o aquivo utilizando `nano Htmlfilter.php` e altere o nome da classe para `class Htmlfilter`
-8. Execute o comando `php artisan krayin-rest-api:install` para instalar e ativar a API Rest do Krayin
+5. Verifique se possui um aquivo chamado **HtmlFilter.php**
+6. Acesse o aquivo utilizando `nano Htmlfilter.php` e altere o nome da classe para `class Htmlfilter`
+7. Execute o comando `php artisan krayin-rest-api:install` para instalar e ativar a API Rest do Krayin
 
 ### Acesso e monitoramento
 
