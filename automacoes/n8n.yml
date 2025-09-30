@@ -197,7 +197,7 @@ services:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.n8n-webhooks.rule=Host(`${N8N_HOST}`) && PathPrefix(`/webhook`)
+        - traefik.http.routers.n8n-webhooks.rule=Host(`${N8N_HOST}`)
         - traefik.http.routers.n8n-webhooks.entrypoints=websecure
         - traefik.http.routers.n8n-webhooks.service=n8n-webhooks-svc
         - traefik.http.routers.n8n-webhooks.tls.certresolver=letsencrypt
