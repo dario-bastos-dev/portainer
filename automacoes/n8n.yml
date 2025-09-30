@@ -89,13 +89,14 @@ services:
         constraints:
           - node.role == manager
 
-  n8n-worker-1:
+  n8n-worker:
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     image: n8nio/n8n:latest
     command: worker --concurrency=${WORKER_CONCURRENCY}
     environment:
       # Execution Mode
       - EXECUTIONS_MODE=queue
+      - WEBHOOK_URL=${WEBHOOK_URL}
       - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
       - QUEUE_HEALTH_CHECK_ACTIVE=true
       - N8N_GRACEFUL_SHUTDOWN_TIMEOUT=30
@@ -143,13 +144,14 @@ services:
         constraints:
           - node.role == manager
       
-  n8n-webhook-1:
+  n8n-webhook:
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     image: n8nio/n8n:latest
     command: webhook
     environment:
       # Execution Mode
       - EXECUTIONS_MODE=queue
+      - WEBHOOK_URL=${WEBHOOK_URL}
       - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
       - QUEUE_HEALTH_CHECK_ACTIVE=true
       - N8N_RUNNERS_ENABLED=true
@@ -190,6 +192,19 @@ services:
     depends_on: 
       - n8n-redis
     deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.n8n-webhooks.rule=Host(`${N8N_HOST}`) && PathPrefix(`/webhook`)
+        - traefik.http.routers.n8n-webhooks.entrypoints=websecure
+        - traefik.http.routers.n8n-webhooks.service=n8n-webhooks-svc
+        - traefik.http.routers.n8n-webhooks.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.n8n-webhooks-svc.loadbalancer.server.port=5678
+        - traefik.http.services.n8n-webhooks-svc.loadbalancer.sticky=true
       mode: replicated
       replicas: 1
       placement:

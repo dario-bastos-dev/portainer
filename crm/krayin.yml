@@ -40,6 +40,7 @@ services:
       - LOG_LEVEL=debug
       - APP_DEBUG=false
       - BROADCAST_DRIVER=log
+
       # BANCO DE DADOS
       - DB_CONNECTION=mysql
       - DB_HOST=db-krayin
@@ -48,6 +49,16 @@ services:
       - DB_USERNAME=${KRAYIN_USER}
       - DB_PASSWORD=${KRAYIN_PASSWORD}
       - DB_PREFIX=krayin_
+
+      # E-MAIL
+      - MAIL_FROM_ADDRESS=${EMAIL_ADDRESS}
+      - MAIL_FROM_NAME="${APP_NAME}"
+      - MAIL_DRIVER=smtp
+      - MAIL_HOST=mailtrap.io
+      - MAIL_PORT=993
+      - MAIL_USERNAME=${EMAIL_ADDRESS}
+      - MAIL_PASSWORD=${EMAIL_PASSWORD}
+      - MAIL_ENCRYPTION=ssl
     deploy:
       labels:
         # --- Configuração do Traefik ---
