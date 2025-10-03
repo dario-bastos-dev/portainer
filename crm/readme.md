@@ -58,6 +58,21 @@ Dentro do arquivo `.env`, defina os valores corretos para as variáveis de confi
 6. Acesse o aquivo utilizando `nano Htmlfilter.php` e altere o nome da classe para `class Htmlfilter`
 7. Execute o comando `php artisan krayin-rest-api:install` para instalar e ativar a API Rest do Krayin
 
+### Alteração de branding
+
+1. Para alterar a logo e o favicon, descomente as duas linhas dos volumes
+2. Adicione os aquivos necessários na pasta `krayin/branding/` e importe ela no seu servidor dentro da pasta do Portainer
+
+**Obs:** Se não alterar, acesse o container do krayin, entre na pasta `crm-laravel` e rode os seguintes comandos:
+
+```
+php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan optimize:clear
+```
+
 ### Acesso e monitoramento
 
 - Verifique o status da implantação na seção Stacks

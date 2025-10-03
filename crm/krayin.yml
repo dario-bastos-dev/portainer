@@ -23,13 +23,15 @@ services:
     hostname: '{{.Service.Name}}.{{.Task.Slot}}'
     volumes:
       - krayin_data:/var/www/html/
+      # - /root/portainer/krayin/branding/favicon.ico:/var/www/html/laravel-crm/public/admin/build/assets/favicon-BtbgZBji.ico:ro Caso queira alterar o favicon descomente
+      # - /root/portainer/krayin/branding/logo.svg:/var/www/html/laravel-crm/public/admin/build/assets/logo-Bjh7YAuF.svg:ro Caso queira alterar o logo descomente
     networks:
       - dev-network
       - traefik-public
     environment:
-      - krayin_PUBLIC_URL=https://krayin.<YOUR_DOMAIN>
-      - APP_URL=https://krayin.<YOUR_DOMAIN>
-      - SANCTUM_STATEFUL_DOMAINS=https://krayin.<YOUR_DOMAIN>
+      - krayin_PUBLIC_URL=https://${KRAYIN_URL}
+      - APP_URL=https://${KRAYIN_URL}
+      - SANCTUM_STATEFUL_DOMAINS=https://${KRAYIN_URL}
       - L5_SWAGGER_UI_PERSIST_AUTHORIZATION=true
       - krayin_CADDY=:80
       - APP_NAME=Krayin
@@ -65,7 +67,7 @@ services:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.krayin.rule=Host(`krayin.<YOUR_DOMAIN>`)
+        - traefik.http.routers.krayin.rule=Host(`${KRAYIN_URL}`)
         - traefik.http.routers.krayin.entrypoints=websecure
         - traefik.http.routers.krayin.service=krayin
         - traefik.http.routers.krayin.tls.certresolver=letsencrypt
