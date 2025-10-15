@@ -27,14 +27,14 @@ services:
         - traefik.enable=true
         #SSL 2 endereço publico do Minio
         - traefik.http.routers.minio_s3.rule=Host(`minioback.<YOUR_DOMAIN>`)
-        - traefik.http.routers.minio_s3.tls.certresolver=le
+        - traefik.http.routers.minio_s3.tls.certresolver=letsencrypt
         - traefik.http.routers.minio_s3.entrypoints=websecure
         - traefik.http.routers.minio_s3.tls=true
         - traefik.http.routers.minio_s3.service=minio_s3
         - traefik.http.services.minio_s3.loadbalancer.server.port=9000
         #SSL 1 endereço console do minio
         - traefik.http.routers.minio_console.rule=Host(`miniofront.<YOUR_DOMAIN>`)
-        - traefik.http.routers.minio_console.tls.certresolver=le
+        - traefik.http.routers.minio_console.tls.certresolver=letsencrypt
         - traefik.http.routers.minio_console.entrypoints=websecure
         - traefik.http.routers.minio_console.tls=true
         - traefik.http.routers.minio_console.service=minio_console

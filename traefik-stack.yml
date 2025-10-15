@@ -46,14 +46,14 @@ services:
       - "traefik.enable=true"
       
       # Roteador HTTP para o Dashboard
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`primary.<YOUR_DOMAIN>`)"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.<YOUR_DOMAIN>`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       
       # Middleware de Autenticação
       - "traefik.http.routers.traefik-dashboard.middlewares=auth-dashboard"
-      - "traefik.http.middlewares.auth-dashboard.basicauth.users=<PASSWORD_HASH>" # <-- Gere uma senha criptografada com htpasswd
+      - "traefik.http.middlewares.auth-dashboard.basicauth.users=<YOUR_USER>:<YOUR_HASHED_PASSWORD>" # <-- Gere uma senha criptografada com htpasswd
       - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
 
 networks:
