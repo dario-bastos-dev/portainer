@@ -25,6 +25,8 @@ services:
       - krayin_data:/var/www/html/
       # - /root/portainer/krayin/branding/favicon.ico:/var/www/html/laravel-crm/public/admin/build/assets/favicon-BtbgZBji.ico:ro Caso queira alterar o favicon descomente
       # - /root/portainer/krayin/branding/logo.svg:/var/www/html/laravel-crm/public/admin/build/assets/logo-Bjh7YAuF.svg:ro Caso queira alterar o logo descomente
+      # - /root/portainer/krayin/branding/logo.svg:/var/www/html/laravel-crm/public/admin/build/assets/dark-logo-Dnw3cpYj.svg.svg:ro Caso queira alterar o logo descomente
+      # - /root/portainer/krayin/unlock/TrustProxies.php:/var/www/html/laravel-crm/app/Http/Middleware/TrustProxies.php:ro Caso queira desbloquear descomente
     networks:
       - dev-network
       - traefik-public
