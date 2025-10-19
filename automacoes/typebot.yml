@@ -1,0 +1,163 @@
+services:
+  type-redis:
+    image: redis:8-alpine
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - type_redis_data:/data
+    networks:
+      - dev-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+
+  typebot-builder:
+    image: baptistearno/typebot-builder:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    environment:
+      # General Settings
+      - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
+      - NEXTAUTH_URL=https://${NEXTAUTH_URL}
+      - NEXT_PUBLIC_VIEWER_URL=https://${NEXT_PUBLIC_VIEWER_URL}
+      - NODE_OPTIONS=--no-node-snapshot
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - DEBUG=true
+
+      # Database Configuration
+      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_NAME}
+      - REDIS_URL=redis://type-redis:6379/0
+
+      # S3 Configuration
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=typebot
+      - S3_PORT=${S3_PORT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_SSL=false
+      - S3_REGION=${S3_REGION}
+
+      # Google OAuth Configuration
+      - GOOGLE_AUTH_CLIENT_ID=${GOOGLE_AUTH_CLIENT_ID}
+      - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
+
+      # Gmail SMTP Configuration
+      # - SMTP_USERNAME=${SMTP_USERNAME}
+      # - SMTP_PASSWORD=${SMTP_PASSWORD}
+      # - SMTP_HOST=${SMTP_HOST}
+      # - SMTP_PORT=${SMTP_PORT}
+      # - NEXT_PUBLIC_SMTP_FROM=${NEXT_PUBLIC_SMTP_FROM}
+      # - SMTP_SECURE=${SMTP_SECURE}
+      # - SMTP_IGNORE_TLS=${SMTP_IGNORE_TLS}
+      # - SMTP_AUTH_DISABLED=${SMTP_AUTH_DISABLED}
+
+      # Telemetry
+      # - MESSAGE_WEBHOOK_URL=${MESSAGE_WEBHOOK_URL}
+      # - USER_CREATED_WEBHOOK_URL=${USER_CREATED_WEBHOOK_URL}
+
+      # System labels
+      - NEXT_PUBLIC_VIEWER_404_TITLE=404
+      - NEXT_PUBLIC_VIEWER_404_SUBTITLE="O bot que você está procurando não existe!"
+    networks:
+      - dev-network
+      - traefik-public
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.typebot-builder.rule=Host(`${NEXTAUTH_URL}`)
+        - traefik.http.routers.typebot-builder.entrypoints=websecure
+        - traefik.http.routers.typebot-builder.service=typebot-builder
+        - traefik.http.routers.typebot-builder.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.typebot-builder.loadbalancer.server.port=3000
+        - traefik.http.services.typebot-builder.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+  typebot-viewer:
+    image: baptistearno/typebot-viewer:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    environment:
+      # General Settings
+      - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
+      - NEXTAUTH_URL=https://${NEXTAUTH_URL}
+      - NEXT_PUBLIC_VIEWER_URL=https://${NEXT_PUBLIC_VIEWER_URL}
+      - NODE_OPTIONS=--no-node-snapshot
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - DEBUG=true
+
+      # Database Configuration
+      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_NAME}
+      - REDIS_URL=redis://type-redis:6379/0
+
+      # S3 Configuration
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_BUCKET=typebot
+      - S3_PORT=${S3_PORT}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_SSL=false
+      - S3_REGION=${S3_REGION}
+
+      # Google OAuth Configuration
+      - GOOGLE_AUTH_CLIENT_ID=${GOOGLE_AUTH_CLIENT_ID}
+      - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
+
+      # Gmail SMTP Configuration
+      # - SMTP_USERNAME=${SMTP_USERNAME}
+      # - SMTP_PASSWORD=${SMTP_PASSWORD}
+      # - SMTP_HOST=${SMTP_HOST}
+      # - SMTP_PORT=${SMTP_PORT}
+      # - NEXT_PUBLIC_SMTP_FROM=${NEXT_PUBLIC_SMTP_FROM}
+      # - SMTP_SECURE=${SMTP_SECURE}
+      # - SMTP_IGNORE_TLS=${SMTP_IGNORE_TLS}
+      # - SMTP_AUTH_DISABLED=${SMTP_AUTH_DISABLED}
+
+      # Telemetry
+      # - MESSAGE_WEBHOOK_URL=${MESSAGE_WEBHOOK_URL}
+      # - USER_CREATED_WEBHOOK_URL=${USER_CREATED_WEBHOOK_URL}
+
+      # System labels
+      - NEXT_PUBLIC_VIEWER_404_TITLE=404
+      - NEXT_PUBLIC_VIEWER_404_SUBTITLE="O bot que você está procurando não existe!"
+    networks:
+      - dev-network
+      - traefik-public
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.typebot-viewer.rule=Host(`${NEXT_PUBLIC_VIEWER_URL}`)
+        - traefik.http.routers.typebot-viewer.entrypoints=websecure
+        - traefik.http.routers.typebot-viewer.service=typebot-viewer
+        - traefik.http.routers.typebot-viewer.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.typebot-viewer.loadbalancer.server.port=3000
+        - traefik.http.services.typebot-viewer.loadbalancer.passHostHeader=true
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  type_redis_data:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
