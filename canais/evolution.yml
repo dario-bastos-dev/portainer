@@ -47,9 +47,9 @@ services:
       - S3_ACCESS_KEY=${S3_ACCESS_KEY}
       - S3_SECRET_KEY=${S3_SECRET_KEY}
       - S3_BUCKET=evolution
-      - S3_PORT=443
+      - S3_PORT=9000
       - S3_ENDPOINT=minio
-      - S3_USE_SSL=true
+      - S3_USE_SSL=false
       # Options
       - QRCODE_LIMIT=1902
       - LANGUAGE=pt-BR
@@ -58,6 +58,9 @@ services:
       #- CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
       - CONFIG_SESSION_PHONE_CLIENT=Evolution_API
       - CONFIG_SESSION_PHONE_NAME=Chrome
+      # Services
+      - CHATWOOT_ENABLED=true
+      - N8N_ENABLED=true
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
