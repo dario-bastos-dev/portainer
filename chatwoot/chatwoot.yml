@@ -15,7 +15,7 @@ services:
           - node.role == manager
 
   chatwoot:
-    image: chatwoot/chatwoot:v4.5.2-ce # Versão Padrão
+    image: chatwoot/chatwoot:v4.6.0-ce # Versão Padrão
     # image: clairton/chatwoot:v4.3.0-uno-alpha-4-ce Vesão White Label 
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     command: bundle exec rails s -p 3000 -b 0.0.0.0
@@ -102,7 +102,7 @@ services:
       
 
   sidekiq:
-    image: chatwoot/chatwoot:v4.5.2-ce # Versão Padrão
+    image: chatwoot/chatwoot:v4.6.0-ce # Versão Padrão
     # image: clairton/chatwoot:v4.3.0-uno-alpha-4-ce Vesão White Label
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     command: bundle exec sidekiq -C config/sidekiq.yml
