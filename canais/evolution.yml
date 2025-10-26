@@ -1,7 +1,7 @@
 services:
   evo-redis:
     image: redis:8-alpine
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}" 
+    hostname: evolution-redis
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data_evo:/data
@@ -16,13 +16,13 @@ services:
 
   evolution:
     image: evoapicloud/evolution-api:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}" 
+    hostname: evolution
     restart: always
     environment:
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
       - SERVER_TYPE=http
       - SERVER_PORT=8080
-      - SERVER_URL=https://evo.<YOUR_DOMAIN>
+      - SERVER_URL=https://evo.${DOMAIN}
       - LOG_LEVEL=ERROR,WARN,DEBUG,INFO,LOG,VERBOSE,DARK,WEBHOOKS
       # Postgres
       - DATABASE_ENABLED=true
@@ -61,6 +61,7 @@ services:
       # Services
       - CHATWOOT_ENABLED=true
       - N8N_ENABLED=true
+      - TYPEBOT_ENABLED=true
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
@@ -73,7 +74,7 @@ services:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.evolution.rule=Host(`evo.<YOUR_DOMAIN>`)
+        - traefik.http.routers.evolution.rule=Host(`evo.${DOMAIN}`)
         - traefik.http.routers.evolution.entrypoints=websecure
         - traefik.http.routers.evolution.service=evolution
         - traefik.http.routers.evolution.tls.certresolver=letsencrypt

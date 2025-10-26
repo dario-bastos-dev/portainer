@@ -21,11 +21,14 @@ services:
     environment:
       # General Settings
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
+      - DEFAULT_WORKSPACE_PLAN=UNLIMITED
       - NEXTAUTH_URL=https://${NEXTAUTH_URL}
+      - NEXTAUTH_URL_INTERNAL=http://localhost:3000
       - NEXT_PUBLIC_VIEWER_URL=https://${NEXT_PUBLIC_VIEWER_URL}
       - NODE_OPTIONS=--no-node-snapshot
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - DEBUG=true
+      - DISABLE_SIGNUP=false
 
       # Database Configuration
       - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_NAME}
@@ -90,11 +93,14 @@ services:
     environment:
       # General Settings
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
+      - DEFAULT_WORKSPACE_PLAN=UNLIMITED
       - NEXTAUTH_URL=https://${NEXTAUTH_URL}
+      - NEXTAUTH_URL_INTERNAL=http://localhost:3000
       - NEXT_PUBLIC_VIEWER_URL=https://${NEXT_PUBLIC_VIEWER_URL}
       - NODE_OPTIONS=--no-node-snapshot
       - ADMIN_EMAIL=${ADMIN_EMAIL}
       - DEBUG=true
+      - DISABLE_SIGNUP=false
 
       # Database Configuration
       - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_NAME}
