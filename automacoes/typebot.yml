@@ -22,16 +22,17 @@ services:
       # General Settings
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
       - DEFAULT_WORKSPACE_PLAN=UNLIMITED
-      - NEXTAUTH_URL=https://${NEXTAUTH_URL}
-      - NEXTAUTH_URL_INTERNAL=http://localhost:3000
-      - NEXT_PUBLIC_VIEWER_URL=https://${NEXT_PUBLIC_VIEWER_URL}
+      - NEXTAUTH_URL=https://${BUILDER_URL}
+      - NEXT_PUBLIC_VIEWER_URL=https://${VIEWER_URL}
       - NODE_OPTIONS=--no-node-snapshot
       - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - DEBUG=true
+      - DEBUG=false
       - DISABLE_SIGNUP=false
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
 
       # Database Configuration
-      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_NAME}
+      - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/typebot
       - REDIS_URL=redis://type-redis:6379/0
 
       # S3 Configuration
@@ -48,14 +49,13 @@ services:
       - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
 
       # Gmail SMTP Configuration
-      # - SMTP_USERNAME=${SMTP_USERNAME}
-      # - SMTP_PASSWORD=${SMTP_PASSWORD}
-      # - SMTP_HOST=${SMTP_HOST}
-      # - SMTP_PORT=${SMTP_PORT}
-      # - NEXT_PUBLIC_SMTP_FROM=${NEXT_PUBLIC_SMTP_FROM}
-      # - SMTP_SECURE=${SMTP_SECURE}
-      # - SMTP_IGNORE_TLS=${SMTP_IGNORE_TLS}
-      # - SMTP_AUTH_DISABLED=${SMTP_AUTH_DISABLED}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=587
+      - NEXT_PUBLIC_SMTP_FROM=${NEXT_PUBLIC_SMTP_FROM}
+      - SMTP_SECURE=true
+      - SMTP_AUTH_DISABLED=false
 
       # Telemetry
       # - MESSAGE_WEBHOOK_URL=${MESSAGE_WEBHOOK_URL}
@@ -73,7 +73,7 @@ services:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.typebot-builder.rule=Host(`${NEXTAUTH_URL}`)
+        - traefik.http.routers.typebot-builder.rule=Host(`${BUILDER_URL}`)
         - traefik.http.routers.typebot-builder.entrypoints=websecure
         - traefik.http.routers.typebot-builder.service=typebot-builder
         - traefik.http.routers.typebot-builder.tls.certresolver=letsencrypt
@@ -94,13 +94,14 @@ services:
       # General Settings
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
       - DEFAULT_WORKSPACE_PLAN=UNLIMITED
-      - NEXTAUTH_URL=https://${NEXTAUTH_URL}
-      - NEXTAUTH_URL_INTERNAL=http://localhost:3000
-      - NEXT_PUBLIC_VIEWER_URL=https://${NEXT_PUBLIC_VIEWER_URL}
+      - NEXTAUTH_URL=https://${BUILDER_URL}
+      - NEXT_PUBLIC_VIEWER_URL=https://${VIEWER_URL}
       - NODE_OPTIONS=--no-node-snapshot
       - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - DEBUG=true
+      - DEBUG=false
       - DISABLE_SIGNUP=false
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
 
       # Database Configuration
       - DATABASE_URL=postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:5432/${DATABASE_NAME}
@@ -120,14 +121,13 @@ services:
       - GOOGLE_AUTH_CLIENT_SECRET=${GOOGLE_AUTH_CLIENT_SECRET}
 
       # Gmail SMTP Configuration
-      # - SMTP_USERNAME=${SMTP_USERNAME}
-      # - SMTP_PASSWORD=${SMTP_PASSWORD}
-      # - SMTP_HOST=${SMTP_HOST}
-      # - SMTP_PORT=${SMTP_PORT}
-      # - NEXT_PUBLIC_SMTP_FROM=${NEXT_PUBLIC_SMTP_FROM}
-      # - SMTP_SECURE=${SMTP_SECURE}
-      # - SMTP_IGNORE_TLS=${SMTP_IGNORE_TLS}
-      # - SMTP_AUTH_DISABLED=${SMTP_AUTH_DISABLED}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=587
+      - NEXT_PUBLIC_SMTP_FROM=${NEXT_PUBLIC_SMTP_FROM}
+      - SMTP_SECURE=true
+      - SMTP_AUTH_DISABLED=false
 
       # Telemetry
       # - MESSAGE_WEBHOOK_URL=${MESSAGE_WEBHOOK_URL}
@@ -145,7 +145,7 @@ services:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.typebot-viewer.rule=Host(`${NEXT_PUBLIC_VIEWER_URL}`)
+        - traefik.http.routers.typebot-viewer.rule=Host(`${VIEWER_URL}`)
         - traefik.http.routers.typebot-viewer.entrypoints=websecure
         - traefik.http.routers.typebot-viewer.service=typebot-viewer
         - traefik.http.routers.typebot-viewer.tls.certresolver=letsencrypt
