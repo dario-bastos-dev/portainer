@@ -1,14 +1,16 @@
 services:
   mariadb:
     image: mariadb:latest
-    hostname: '{{.Service.Name}}.{{.Task.Slot}}'
+    hostname: mariadb
+    ports: 
+      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     environment:
       - TZ=America/Sao_Paulo
-      - MYSQL_DATABASE=krayin
-      - MYSQL_ROOT_PASSWORD=${KRAYIN_PASSWORD}
-      - MYSQL_USER=${KRAYIN_USER}
+      - MYSQL_DATABASE=mariadb
+      - MYSQL_ROOT_PASSWORD=${MARIADB_PASSWORD}
+      - MYSQL_USER=${MARIADB_USER}
     networks:
       - dev-network
     deploy:

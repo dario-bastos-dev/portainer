@@ -1,10 +1,12 @@
-# Implantação de Bancos de Dados com Portainer
+# Implantação de Bancos de Dados/Vector Store com Portainer
 
 ## Bancos atualmente configurados
 
 - Postgres
 - Redis
 - MariaDB
+- Baserow
+- Qdrant (Vector Store)
 
 ## Pré-requisitos
 

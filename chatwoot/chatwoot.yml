@@ -60,6 +60,7 @@ services:
       - STORAGE_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
       - STORAGE_REGION=S3
       - STORAGE_ENDPOINT=${S3_ENDPOINT}
+      - STORAGE_FORCE_PATH_STYLE=true
 
       # SMTP (E-mail Externo) - Descomente quando necessário
       # Servidor de Email Gmail
@@ -145,6 +146,7 @@ services:
       - STORAGE_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
       - STORAGE_REGION=S3
       - STORAGE_ENDPOINT=${S3_ENDPOINT}
+      - STORAGE_FORCE_PATH_STYLE=true
       
       # SMTP (E-mail Externo) - Descomente quando necessário
       # Servidor de Email Gmail
