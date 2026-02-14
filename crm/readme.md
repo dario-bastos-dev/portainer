@@ -43,7 +43,8 @@ Dentro do arquivo `.env`, defina os valores corretos para as variáveis de confi
 
 1. Acesse containers, na barra lateral do Portainer
 2. Selecione o container do krayin
-3. Cole o seguinte comando `cd laravel-crm && php artisan krayin-crm:install`, você deve confirmar as informações que ele irá pedir, após isso será feito a cofniguração do banco de dados
+3. Cole o seguinte comando `cd laravel-crm && php artisan krayin-crm:install`
+`, você deve confirmar as informações que ele irá pedir, após isso será feito a cofniguração do banco de dados
 4. Após configurar o banco de dados, aparecerá uma opção para criar o usuário, defina o nome, e-mail e senha
 
 #### API Rest
@@ -52,11 +53,7 @@ Dentro do arquivo `.env`, defina os valores corretos para as variáveis de confi
 
 1. Acesse containers, na barra lateral do Portainer
 2. Selecione o container do krayin
-3. Cole o seguinte comando `composer require krayin/rest-api`
-4. Acesse os Helpers do sistema `cd packages/Webkul/Email/src/Helpers && ls`
-5. Verifique se possui um aquivo chamado **HtmlFilter.php**
-6. Acesse o aquivo utilizando `nano Htmlfilter.php` e altere o nome da classe para `class Htmlfilter`
-7. Execute o comando `php artisan krayin-rest-api:install` para instalar e ativar a API Rest do Krayin
+3. Cole o seguinte comando `composer require krayin/rest-api && php artisan krayin-rest-api:install`
 
 ### Alteração de branding
 
