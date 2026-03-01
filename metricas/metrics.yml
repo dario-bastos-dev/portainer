@@ -12,6 +12,7 @@ services:
     volumes:
       - prometheus_data:/prometheus
       - /root/portainer/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - /root/portainer/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
     networks:
       - dev-network
       - traefik-public
@@ -80,7 +81,7 @@ services:
         limits:
           memory: 128M
 
-  cadvisor: #
+  cadvisor: # Exporta métricas de uso de contêineres para o Prometheus
     image: gcr.io/cadvisor/cadvisor:latest
     hostname: "{{.Node.Hostname}}"
     command:
@@ -99,7 +100,7 @@ services:
         limits:
           memory: 256M
 
-  alertmanager:
+  alertmanager: # Gerencia alertas enviados pelo Prometheus
     image: prom/alertmanager:latest
     hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     command:
