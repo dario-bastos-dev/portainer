@@ -23,4 +23,4 @@ echo "Instalando Docker..."
 sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 echo "Ativando docker swarm"
-docker swarm init --advertise-addr <IP_DA_SUA_VPS>
+docker swarm init --advertise-addr <IP_PRIVADO_DA_SUA_VPS>

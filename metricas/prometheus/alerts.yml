@@ -1,0 +1,22 @@
+groups:
+  - name: swarm_alerts
+    rules:
+      # Regra 1: Servidor Caiu ou Desconectou
+      - alert: ServidorForaDoAr
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 Servidor {{ $labels.instance }} caiu!"
+          description: "O servidor parou de responder ao monitoramento há mais de 1 minuto."
+
+      # Regra 2: CPU acima de 90% por mais de 5 minutos
+      - alert: UsoAltoDeCPU
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ CPU Crítica em {{ $labels.instance }}"
+          description: "O uso de CPU está acima de 90% há mais de 5 minutos."

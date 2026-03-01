@@ -11,4 +11,4 @@ echo "Deploy da stack do Portainer..."
 docker stack deploy -c portainer-stack.yml portainer
 
 echo "Configuração concluída!"
-echo "Acesse o Portainer através do domínio configurado: https://portainer.<SEU_DOMINIO>"
+echo "Acesse o Portainer através do domínio configurado!"
