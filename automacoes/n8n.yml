@@ -1,224 +1,308 @@
+# Variáveis compartilhadas entre os serviços N8N
+x-n8n-shared-env: &n8n-shared-env
+  # Configuração Gerais do N8N
+  - N8N_ENCRYPTION_KEY=${ENCRYPTION_KEY}
+  - NODE_ENV=production
+  - N8N_DIAGNOSTICS_ENABLED=false
+  - N8N_PAYLOAD_SIZE_MAX=16
+  - N8N_LOG_LEVEL=info
+  - GENERIC_TIMEZONE=America/Sao_Paulo
+  - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+  # Configuração de Execução dos Workflows (Runners)
+  - N8N_RUNNERS_ENABLED=true
+  - N8N_RUNNERS_MODE=external
+  # - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
+  # - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
+  # - N8N_RUNNERS_TASK_REQUEST_TIMEOUT=120
+  - N8N_NATIVE_PYTHON_RUNNER=true
+  - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+  # Configuração do Banco de Dados
+  - DB_TYPE=postgresdb
+  - DB_TABLE_PREFIX=n8n_
+  - DB_POSTGRESDB_HOST=postgres
+  - DB_POSTGRESDB_PORT=5432
+  - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+  - DB_POSTGRESDB_USER=${POSTGRES_USER}
+  - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+  # Configuração do Endereço do N8N
+  - N8N_PORT=5678
+  - N8N_HOST=${EDITOR_HOST}
+  - N8N_EDITOR_BASE_URL=https://${EDITOR_HOST}/
+  - N8N_PROTOCOL=https
+  - WEBHOOK_URL=https://${WEBHOOK_HOST}/
+  - N8N_ENDPOINT_WEBHOOK=webhook
+  # Configuração da Modo de Execução do N8N (fila)
+  - EXECUTIONS_MODE=queue
+  - QUEUE_BULL_REDIS_HOST=n8n_redis
+  - QUEUE_BULL_REDIS_PORT=6379
+  - QUEUE_BULL_REDIS_DB=2
+  # - QUEUE_BULL_REDIS_PASSWORD=SENHA
+  - EXECUTIONS_TIMEOUT=3600
+  - EXECUTIONS_TIMEOUT_MAX=7200
+  # Configuração da Interface do N8N
+  - N8N_VERSION_NOTIFICATIONS_ENABLED=true
+  - N8N_PUBLIC_API_SWAGGERUI_DISABLED=false
+  - N8N_TEMPLATES_ENABLED=true
+  - N8N_ONBOARDING_FLOW_DISABLED=true
+  - N8N_WORKFLOW_TAGS_DISABLED=false
+  - N8N_HIDE_USAGE_PAGE=false
+  # Configuração da Manutenção e Limpeza do N8N
+  - EXECUTIONS_DATA_PRUNE=true
+  - EXECUTIONS_DATA_MAX_AGE=336
+  - EXECUTIONS_DATA_PRUNE_HARD_DELETE_INTERVAL=15
+  - EXECUTIONS_DATA_PRUNE_SOFT_DELETE_INTERVAL=60
+  - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+  - EXECUTIONS_DATA_SAVE_ON_ERROR=all
+  - EXECUTIONS_DATA_SAVE_ON_SUCCESS=all
+  - EXECUTIONS_DATA_SAVE_ON_PROGRESS=true
+  - EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS=true
+  # Configuração de Bibliotecas do N8N
+  - NODE_FUNCTION_ALLOW_BUILTIN=*
+  - NODE_FUNCTION_ALLOW_EXTERNAL=lodash
+  - N8N_COMMUNITY_PACKAGES_ENABLED=true
+  - N8N_REINSTALL_MISSING_PACKAGES=true
+  - N8N_NODE_PATH=/home/node/.n8n/nodes
+  # Configuração de IA
+  - N8N_AI_ENABLED=false
+  # - N8N_AI_PROVIDER=openai
+  # - N8N_AI_OPENAI_API_KEY=${OPENAI_API_KEY}
+  # Configuração dos E-mails (Multi-user)
+  # - N8N_EMAIL_MODE=smtp
+  # - N8N_SMTP_HOST=smtp.google.com
+  # - N8N_SMTP_PORT=25
+  # - N8N_SMTP_USER=USER
+  # - N8N_SMTP_PASS=SENHA
+  # - N8N_SMTP_SENDER=seuemail@gmail.com
+  # - N8N_SMTP_SSL=false
+  # Metricas
+  - N8N_METRICS=true
+  - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
+  - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
+  - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
+  # Mudanças da versão 2.0
+  - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+  - NODES_EXCLUDE="[]"
+  - N8N_SKIP_AUTH_ON_OAUTH_CALLBACK=false
+  - N8N_RESTRICT_FILE_ACCESS_TO=~/.n8n-files
+  - N8N_DEFAULT_BINARY_DATA_MODE=default
+
 services:
-  n8n-redis:
-    image: redis:8-alpine
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}" 
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+  # Redis - Serviço de Cache
+  n8n_redis:
+    image: redis:alpine
+    command: [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--port",
+        "6379"
+      ]
     volumes:
-      - redis_data:/data
+      - redis_data-n8n:/data
     networks:
       - dev-network
     deploy:
-      mode: replicated
-      replicas: 1
       placement:
         constraints:
           - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
 
-
-  n8n-main:
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+  # N8N Editor - Interface Web
+  n8n_editor:
     image: n8nio/n8n:latest
-    restart: unless-stopped
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     command: start
-    environment:
-      - N8N_HOST=${N8N_HOST}
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=${N8N_PROTOCOL}
-      - NODE_ENV=production
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      
-      # Execution Mode
-      - EXECUTIONS_MODE=queue
-      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
-      - QUEUE_HEALTH_CHECK_ACTIVE=true
-      - N8N_RUNNERS_ENABLED=true
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
-      
-      # Database Configuration
-      - DB_TYPE=postgresdb
-      - DB_TABLE_PREFIX=n8n_
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      
-      # Redis Configuration
-      - QUEUE_BULL_REDIS_HOST=n8n-redis
-      - QUEUE_BULL_REDIS_PORT=6379
-      - QUEUE_BULL_REDIS_DB=0
-      - QUEUE_BULL_PREFIX=n8n_
-      
-      # Security
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      
-      # Additional Settings
-      - N8N_LOG_LEVEL=info
-      - N8N_METRICS=true
-      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
-      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
-      - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
-
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-      - TZ=${GENERIC_TIMEZONE}
-    volumes:
-      - n8n_data:/home/node/.n8n
     networks:
       - dev-network
       - traefik-public
-    depends_on: 
-      - n8n-redis
-    deploy:
-      labels:
-        # --- Configuração do Traefik ---
-        - traefik.enable=true
-
-        # --- Roteador ---
-        - traefik.http.routers.n8n-main.rule=Host(`${N8N_HOST}`)
-        - traefik.http.routers.n8n-main.priority=100
-        - traefik.http.routers.n8n-main.entrypoints=websecure
-        - traefik.http.routers.n8n-main.service=n8n-main
-        - traefik.http.routers.n8n-main.tls.certresolver=letsencrypt
-        
-        # --- Serviço ---
-        - traefik.http.services.n8n-main.loadbalancer.server.port=5678
-        - traefik.http.services.n8n-main.loadbalancer.passHostHeader=true
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-
-  n8n-worker:
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
-    image: n8nio/n8n:latest
-    command: worker --concurrency=${WORKER_CONCURRENCY}
-    environment:
-      # Execution Mode
-      - EXECUTIONS_MODE=queue
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
-      - QUEUE_HEALTH_CHECK_ACTIVE=true
-      - N8N_GRACEFUL_SHUTDOWN_TIMEOUT=30
-      - N8N_RUNNERS_ENABLED=true
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
-      
-      # Database Configuration
-      - DB_TYPE=postgresdb
-      - DB_TABLE_PREFIX=n8n_
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      
-      # Redis Configuration
-      - QUEUE_BULL_REDIS_HOST=n8n-redis
-      - QUEUE_BULL_REDIS_PORT=6379
-      - QUEUE_BULL_REDIS_DB=${REDIS_DB}
-      - QUEUE_BULL_PREFIX=n8n_
-      
-      # Security
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      
-      # Additional Settings
-      - N8N_LOG_LEVEL=info
-      - N8N_METRICS=true
-      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
-      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
-      - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
-
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-      - TZ=${GENERIC_TIMEZONE}
     volumes:
       - n8n_data:/home/node/.n8n
-    networks:
-      - dev-network
-    depends_on: 
-      - n8n-redis
+    environment: *n8n-shared-env
     deploy:
       mode: replicated
       replicas: 1
       placement:
         constraints:
           - node.role == manager
-      
-  n8n-webhook:
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.n8n_editor.rule=Host(`${EDITOR_HOST}`)
+        - traefik.http.routers.n8n_editor.entrypoints=websecure
+        - traefik.http.routers.n8n_editor.tls.certresolver=letsencrypt
+        - traefik.http.routers.n8n_editor.service=n8n_editor
+        - traefik.http.services.n8n_editor.loadbalancer.server.port=5678
+        - traefik.http.services.n8n_editor.loadbalancer.passHostHeader=true
+        - traefik.http.services.n8n_editor.loadbalancer.sticky=true
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+
+  # N8N Webhooks - Servidor de Webhooks
+  n8n_webhook:
     image: n8nio/n8n:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
     command: webhook
-    environment:
-      # Execution Mode
-      - EXECUTIONS_MODE=queue
-      - WEBHOOK_URL=${WEBHOOK_URL}
-      - N8N_DISABLE_PRODUCTION_MAIN_PROCESS=true
-      - QUEUE_HEALTH_CHECK_ACTIVE=true
-      - N8N_RUNNERS_ENABLED=true
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
-      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
-      
-      # Database Configuration
-      - DB_TYPE=postgresdb
-      - DB_TABLE_PREFIX=n8n_
-      - DB_POSTGRESDB_HOST=postgres
-      - DB_POSTGRESDB_PORT=5432
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      - DB_POSTGRESDB_USER=${POSTGRES_USER}
-      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      
-      # Redis Configuration
-      - QUEUE_BULL_REDIS_HOST=n8n-redis
-      - QUEUE_BULL_REDIS_PORT=6379
-      - QUEUE_BULL_REDIS_DB=${REDIS_DB}
-      - QUEUE_BULL_PREFIX=n8n_
-      
-      # Security
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      
-      # Additional Settings
-      - N8N_LOG_LEVEL=info
-      - N8N_METRICS=true
-      - N8N_METRICS_INCLUDE_MESSAGE_EVENT_BUS_METRICS=true
-      - N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL=true
-      - N8N_METRICS_QUEUE_METRICS_INTERVAL=20
-
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-      - TZ=${GENERIC_TIMEZONE}
-    volumes:
-      - n8n_data:/home/node/.n8n
     networks:
       - dev-network
-    depends_on: 
-      - n8n-redis
+      - traefik-public
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment: *n8n-shared-env
     deploy:
+      mode: replicated
+      replicas: 2
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
       labels:
-        # --- Configuração do Traefik ---
         - traefik.enable=true
+        - traefik.http.routers.n8n_webhook.rule=Host(`${WEBHOOK_HOST}`)
+        - traefik.http.routers.n8n_webhook.entrypoints=websecure
+        - traefik.http.routers.n8n_webhook.tls.certresolver=letsencrypt
+        - traefik.http.routers.n8n_webhook.service=n8n_webhook
+        - traefik.http.services.n8n_webhook.loadbalancer.server.port=5678
+        - traefik.http.services.n8n_webhook.loadbalancer.passHostHeader=true
+        - traefik.http.services.n8n_webhook.loadbalancer.sticky=true
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
-        # --- Roteador ---
-        - traefik.http.routers.n8n-webhooks.rule=Host(`${N8N_HOST}`) && PathPrefix(`/webhook/`)
-        - traefik.http.routers.n8n-webhooks.priority=200
-        - traefik.http.routers.n8n-webhooks.entrypoints=websecure
-        - traefik.http.routers.n8n-webhooks.service=n8n-webhooks-svc
-        - traefik.http.routers.n8n-webhooks.tls.certresolver=letsencrypt
-        
-        # --- Serviço ---
-        - traefik.http.services.n8n-webhooks-svc.loadbalancer.server.port=5678
-        - traefik.http.services.n8n-webhooks-svc.loadbalancer.sticky=true
+  # N8N MCP API - Servidor MCP (v1.88+)
+  n8n_mcp_api:
+    image: n8nio/n8n:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    command: webhook
+    networks:
+      - dev-network
+      - traefik-public
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment: *n8n-shared-env
+    deploy:
       mode: replicated
       replicas: 1
       placement:
         constraints:
           - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2048M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.n8n_mcp_api.rule=Host(`${WEBHOOK_HOST}`) && PathPrefix(`/mcp`)
+        - traefik.http.routers.n8n_mcp_api.priority=100
+        - traefik.http.routers.n8n_mcp_api.entrypoints=websecure
+        - traefik.http.routers.n8n_mcp_api.tls.certresolver=letsencrypt
+        - traefik.http.routers.n8n_mcp_api.service=n8n_mcp_api
+        - traefik.http.routers.n8n_mcp_api.middlewares=mcp-headers@docker
+        - traefik.http.middlewares.mcp-headers.headers.customrequestheaders.X-Accel-Buffering=no
+        - traefik.http.middlewares.mcp-headers.headers.customresponseheaders.X-Accel-Buffering=no
+        - traefik.http.middlewares.mcp-headers.headers.customresponseheaders.Cache-Control=no-cache
+        - traefik.http.middlewares.mcp-headers.headers.customresponseheaders.Connection=keep-alive
+        - traefik.http.services.n8n_mcp_api.loadbalancer.server.port=5678
+        - traefik.http.services.n8n_mcp_api.loadbalancer.passHostHeader=true
+        - traefik.http.services.n8n_mcp_api.loadbalancer.server.scheme=http
+        - traefik.http.services.n8n_mcp_api.loadbalancer.sticky=true
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+
+  # Pareamento dinâmico: Worker x Runner
+  # n8n_broker_lb:
+  #     image: haproxy:alpine
+  #     networks:
+  #       - dev-network
+  #     deploy:
+  #       replicas: 1
+  #       placement:
+  #         constraints:
+  #           - node.labels.type == app-host
+  #     configs:
+  #     - source: haproxy_broker_cfg
+  #       target: /usr/local/etc/haproxy/haproxy.cfg
+
+  # N8N Runners - Execução de JavaScript e Python
+  # n8n_runners:
+  #   image: n8nio/runners:latest
+  #   hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+  #   command: ["javascript", "python"]
+  #   networks:
+  #     - dev-network
+  #   volumes:
+  #     - n8n_data:/home/node/.n8n
+  #   environment:
+  #     - N8N_RUNNERS_TASK_BROKER_URI=http://n8n_broker_lb:5679
+  #     - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       constraints:
+  #         - node.role == manager
+  #     resources:
+  #       limits:
+  #         cpus: "1"
+  #         memory: 1024M
+  #     update_config:
+  #       parallelism: 1
+  #       delay: 30s
+  #       order: start-first
+  #       failure_action: rollback
+
+  # N8N Workers - Processamento de Filas
+  n8n_worker:
+    image: n8nio/n8n:latest
+    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    command: worker --concurrency=20
+    networks:
+      - dev-network
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment: *n8n-shared-env
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 volumes:
-  redis_data:
+  redis_data-n8n:
   n8n_data:
 
 networks:
   dev-network:
     external: true
   traefik-public:
+    external: true
+
+configs:
+  haproxy_broker_cfg:
     external: true

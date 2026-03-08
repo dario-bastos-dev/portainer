@@ -33,7 +33,8 @@ Dentro do arquivo `.env`, defina os valores corretos para as variáveis de confi
 2. Selecione a aba **Upload**
 3. Escolha um arquivo dentro de `/automacoes` do seu sistema local
 4. Defina o nome do stack e configure variáveis de ambiente se necessário
-5. Implante o stack
+5. Caso utilize os blocos de código para funções complexas(principalmente usando python) ou para processar documentos muito extensos, descomente as variáveis e os serviços do runner e do broker
+6. Implante o stack
 
 ## Pós-Implantação
 
