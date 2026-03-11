@@ -54,7 +54,7 @@ x-shared-env: &dify-env
   REDIS_HOST: dify-redis
   REDIS_PORT: 6379
   REDIS_PASSWORD: ${REDIS_PASSWORD}
-  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@dify-redis:6379/1
+  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@dify-redis:6379/0
   # Vector Database (Qdrant Externo)
   VECTOR_STORE: qdrant
   QDRANT_URL: ${QDRANT_URL}
