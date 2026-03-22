@@ -95,7 +95,7 @@ services:
       - dev-network
       - traefik-public
     volumes:
-      - dify-data:/app/api/storage
+      - dify-data:/app/storage
     deploy:
       labels:
         - "traefik.enable=true"
@@ -136,7 +136,7 @@ services:
     networks:
       - dev-network
     volumes:
-      - dify-data:/app/api/storage
+      - dify-data:/app/storage
     deploy:
       mode: replicated
       replicas: 1
@@ -203,7 +203,7 @@ services:
       - dev-network
       - traefik-public
     volumes:
-      - plugin-data:/app/storage
+      - dify-data:/app/storage
     deploy:
       mode: replicated
       replicas: 1
@@ -335,7 +335,6 @@ services:
 volumes:
   redis_data-dify:
   dify-data:
-  plugin-data:
   dify-sandbox_deps:
 
 networks:
