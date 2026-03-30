@@ -118,6 +118,46 @@ Na interface do Portainer, ao criar o stack, defina as seguintes variáveis de a
 4. Defina o nome do stack e configure as variáveis de ambiente
 5. Implante o stack
 
+## Configuração NFS (opcional)
+
+1. Instale o servidor NFS (no servidor onde será criado o diretório) e o cliente(nos servidores restantes)
+
+```bash
+# Instalando servidor
+sudo apt install nfs-kernel-server -y
+
+# Instalando cliente
+sudo apt install nfs-common -y
+```
+
+2. Crie o diretório que será utilizado com o comando `sudo mkdir -p /var/<caminho_do_diretório>`
+
+```bash
+# Exemplo
+sudo mkdir -p /var/nfs/dify-data
+```
+
+3. Dê as permissões necessárias
+
+```bash
+# Utilizando o diretório do exemplo anterior
+sudo chown -R nobody:nogroup /var/nfs/dify-data
+sudo chmod -R 777 /var/nfs/dify-data
+```
+
+4. Adicione a pasta no arquivo de exportação
+
+```bash
+echo "/var/nfs/dify-storage <ip_do_servidor>/24(rw,sync,no_subtree_check)" | sudo tee -a /etc/exports
+```
+
+5. Aplique as configurações e reinicie o serviço
+
+```bash
+sudo exportfs -a
+sudo systemctl restart nfs-kernel-server
+```
+
 ## Roteamento com Traefik
 
 O stack expõe os seguintes serviços via Traefik através da rede `traefik-public`:

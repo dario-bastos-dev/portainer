@@ -95,7 +95,7 @@ services:
       - dev-network
       - traefik-public
     volumes:
-      - dify-data:/app/storage
+      - dify-data:/app/api/storage
     deploy:
       labels:
         - "traefik.enable=true"
@@ -136,7 +136,7 @@ services:
     networks:
       - dev-network
     volumes:
-      - dify-data:/app/storage
+      - dify-data:/app/api/storage
     deploy:
       mode: replicated
       replicas: 1
@@ -187,7 +187,7 @@ services:
           memory: 128M
 
   dify-plugin:
-    image: langgenius/dify-plugin-daemon:latest-local
+    image: langgenius/dify-plugin-daemon:main-local
     environment:
       <<: *dify-env 
       LANG: C.UTF-8
@@ -199,6 +199,9 @@ services:
       PLUGIN_REMOTE_INSTALLING_HOST: 0.0.0.0
       PLUGIN_REMOTE_INSTALLING_PORT: 5003
       PLUGIN_WORKING_PATH: /app/storage/cwd
+      PLUGIN_PYTHON_ENV_INIT_TIMEOUT: 1200
+      PLUGIN_MAX_EXECUTION_TIMEOUT: 1200
+      PLUGIN_INSTALL_TIMEOUT: 1200
     networks:
       - dev-network
       - traefik-public
@@ -334,8 +337,14 @@ services:
 
 volumes:
   redis_data-dify:
-  dify-data:
   dify-sandbox_deps:
+  dify-data:
+    # Para usar um volume NFS, descomente as linhas abaixo e siga as intruções para configurar o NFS no seu servidor
+    # driver: local
+    # driver_opts:
+    #   type: nfs
+    #   o: addr=<IP_ADDRESS>,rw,nfsvers=4,async
+    #   device: ":<caminho_do_diretorio_no_servidor>"
 
 networks:
   dev-network:
