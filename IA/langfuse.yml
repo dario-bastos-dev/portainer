@@ -1,0 +1,176 @@
+x-langfuse-env: &langfuse-env
+  HOSTNAME: 0.0.0.0
+  NEXTAUTH_URL: https://${NEXTAUTH_URL}
+  DATABASE_URL: postgresql://${DATABASE_USER}:${DATABASE_PASSWORD}@postgres:5432/${DATABASE_NAME}
+  SALT: ${SALT}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+  TELEMETRY_ENABLED: "false"
+  LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
+  CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+  CLICKHOUSE_URL: http://clickhouse:8123
+  CLICKHOUSE_USER: admin
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
+  LANGFUSE_USE_AZURE_BLOB: "false"
+  LANGFUSE_USE_OCI_NATIVE_OBJECT_STORAGE: "false"
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_S3_ACCESS_KEY_ID}
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_S3_SECRET_ACCESS_KEY}
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_S3_ACCESS_KEY_ID}
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_S3_SECRET_ACCESS_KEY}
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  LANGFUSE_S3_BATCH_EXPORT_ENABLED: "true"
+  LANGFUSE_S3_BATCH_EXPORT_BUCKET: langfuse
+  LANGFUSE_S3_BATCH_EXPORT_PREFIX: exports/
+  LANGFUSE_S3_BATCH_EXPORT_REGION: auto
+  LANGFUSE_S3_BATCH_EXPORT_ENDPOINT: http://minio:9000
+  LANGFUSE_S3_BATCH_EXPORT_EXTERNAL_ENDPOINT: http://${SERVER_IP}:9000
+  LANGFUSE_S3_BATCH_EXPORT_ACCESS_KEY_ID: ${LANGFUSE_S3_ACCESS_KEY_ID}
+  LANGFUSE_S3_BATCH_EXPORT_SECRET_ACCESS_KEY: ${LANGFUSE_S3_SECRET_ACCESS_KEY}
+  LANGFUSE_S3_BATCH_EXPORT_FORCE_PATH_STYLE: "true"
+  LANGFUSE_INGESTION_QUEUE_DELAY_MS: 1000
+  LANGFUSE_INGESTION_CLICKHOUSE_WRITE_INTERVAL_MS:
+  REDIS_HOST: langfuse-redis
+  REDIS_PORT: 6379
+  REDIS_AUTH: ${REDIS_AUTH}
+  REDIS_TLS_ENABLED: "false"
+  EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+  SMTP_CONNECTION_URL: ${SMTP_CONNECTION_URL}
+
+
+services:
+  langfuse-worker:
+    image: langfuse/langfuse-worker:latest
+    restart: always
+    networks:
+      - dev-network
+    environment:
+      <<: *langfuse-env
+    deploy:
+        mode: replicated
+        replicas: 2
+        placement:
+          constraints:
+            - node.role == manager
+        resources:
+          limits:
+            cpus: "1"
+            memory: 1024M
+        update_config:
+          parallelism: 1
+          delay: 30s
+          order: start-first
+          failure_action: rollback
+  langfuse-web:
+    image: langfuse/langfuse:latest
+    restart: always
+    networks:
+      - dev-network
+      - traefik-public
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.langfuse-web.rule=Host(`${NEXTAUTH_URL}`)
+        - traefik.http.routers.langfuse-web.entrypoints=websecure
+        - traefik.http.routers.langfuse-web.tls.certresolver=letsencrypt
+        - traefik.http.routers.langfuse-web.service=langfuse-web
+        - traefik.http.services.langfuse-web.loadbalancer.server.port=3000
+        - traefik.http.services.langfuse-web.loadbalancer.passHostHeader=true
+        - traefik.http.services.langfuse-web.loadbalancer.sticky=true
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    restart: always
+    networks:
+      - dev-network
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: langfuse
+      CLICKHOUSE_USER: admin
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+    deploy:
+        mode: replicated
+        replicas: 1
+        placement:
+          constraints:
+            - node.role == manager
+        resources:
+          limits:
+            cpus: "1"
+            memory: 2048M
+
+  langfuse-redis:
+    image: redis:alpine
+    restart: always
+    networks:
+      - dev-network
+    configs:
+      - source: langfuse_redis
+        target: /usr/local/etc/redis/redis.conf
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    volumes:
+      - langfuse_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+    deploy:
+        mode: replicated
+        replicas: 1
+        placement:
+          constraints:
+            - node.role == manager
+        resources:
+          limits:
+            cpus: "1"
+            memory: 1024M
+
+volumes:
+  langfuse_clickhouse_data:
+  langfuse_clickhouse_logs:
+  langfuse_redis_data:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
+
+configs:
+  langfuse_redis:
+    external: true 
