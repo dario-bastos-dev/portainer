@@ -1,0 +1,114 @@
+x-mautic-volumes: &mautic-volumes
+  - mautic_config:/var/www/html/config:z
+  - mautic_logs:/var/www/html/var/logs:z
+  - mautic_files:/var/www/html/docroot/media/files:z
+  - mautic_images:/var/www/html/docroot/media/images:z
+  - mautic_plugins:/var/www/html/plugins
+#  - ./cron:/opt/mautic/cron:z # Uncomment this line to customize your cron configuration
+
+x-mautic-env: &mautic-env
+  MAUTIC_DB_HOST: mariadb
+  MAUTIC_DB_PORT: 3306
+  MAUTIC_DB_DATABASE: mautic
+  MAUTIC_DB_USER: ${MAUTIC_USER}
+  MAUTIC_DB_PASSWORD: ${MAUTIC_PASSWORD}
+
+  MAUTIC_MESSENGER_DSN_EMAIL: doctrine://default
+  MAUTIC_MESSENGER_DSN_HIT: doctrine://default
+
+services:
+
+  mautic_web:
+    image: mautic/mautic:latest
+    environment:
+      <<: *mautic-env
+      DOCKER_MAUTIC_LOAD_TEST_DATA: "false"
+    volumes: *mautic-volumes
+    networks:
+      - dev-network
+      - traefik-public
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.mautic_web.rule=Host(`${DOMAIN}`)
+        - traefik.http.routers.mautic_web.entrypoints=websecure
+        - traefik.http.routers.mautic_web.service=mautic_web
+        - traefik.http.routers.mautic_web.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.mautic_web.loadbalancer.server.port=8080
+        - traefik.http.services.mautic_web.loadbalancer.passHostHeader=true
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 1024M
+    healthcheck:
+        test: curl http://localhost:8080
+        interval: 30s
+        timeout: 10s
+        retries: 3
+
+  mautic_cron:
+    image: mautic/mautic:latest
+    volumes: *mautic-volumes
+    environment:
+      <<: *mautic-env
+      DOCKER_MAUTIC_ROLE: mautic_cron
+    networks:
+      - dev-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 512M
+
+  mautic_worker:
+    image: mautic/mautic:latest
+    environment:
+      <<: *mautic-env
+      DOCKER_MAUTIC_ROLE: mautic_worker
+    volumes: *mautic-volumes
+    networks:
+      - dev-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  mautic_config:
+  mautic_logs:
+  mautic_files:
+  mautic_images:
+  mautic_plugins:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
