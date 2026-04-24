@@ -1,0 +1,103 @@
+services:
+  evolution_go:
+    image: evoapicloud/evolution-go:latest
+    environment:
+       # Servidor
+      SERVER_PORT: 4000
+      CLIENT_NAME: "evolution"
+
+      # Segurança
+      GLOBAL_API_KEY: "${GLOBAL_API_KEY}"
+
+      # Banco de Dados PostgreSQL
+      POSTGRES_AUTH_DB: "postgresql://admin:${POSTGRES_PASSWORD}@pgbouncer:6432/evogo_auth?sslmode=disable"
+      POSTGRES_USERS_DB: "postgresql://admin:${POSTGRES_PASSWORD}@pgbouncer:6432/evogo_users?sslmode=disable"
+      DATABASE_SAVE_MESSAGES: "true"
+
+      # Logs e Debug
+      WADEBUG: "DEBUG"
+      LOGTYPE: "console"
+      LOG_DIRECTORY: "/app/logs"
+      LOG_MAX_SIZE: "100"
+      LOG_MAX_BACKUPS: "5"
+      LOG_MAX_AGE: "30"
+      LOG_COMPRESS: "true"
+
+      # Conexão
+      CONNECT_ON_STARTUP: "false"
+      WEBHOOK_FILES: "true"
+
+      # Sistema
+      OS_NAME: "Linux"
+
+      # Webhook
+      # WEBHOOK_URL: "https://seu-webhook.com/endpoint"
+
+      # RabbitMQ
+      # AMQP_URL: "amqp://admin:admin@rabbitmq:5672/default"
+      # AMQP_GLOBAL_ENABLED: "true"
+      # AMQP_GLOBAL_EVENTS: "messages.upsert,messages.update,connection.update"
+      # AMQP_SPECIFIC_EVENTS: ""
+
+      # NATS
+      # NATS_URL: "nats://nats:4222"
+      # NATS_GLOBAL_ENABLED: "false"
+      # NATS_GLOBAL_EVENTS: ""
+
+      # MinIO
+      MINIO_ENABLED: "true"
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
+      MINIO_BUCKET: "evolution"
+      MINIO_USE_SSL: "false"
+      MINIO_REGION: "us-east-1"
+
+      # Eventos
+      EVENT_IGNORE_GROUP: "false"
+      EVENT_IGNORE_STATUS: "false"
+
+      # QR Code
+      QRCODE_MAX_COUNT: "5"
+
+      # Verificação de Usuário
+      CHECK_USER_EXISTS: "true"
+
+    volumes:
+      - evolution_go_data:/app/dbdata
+      - evolution_go_logs:/app/logs
+    networks:
+      - traefik-public
+      - dev-network
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.evolution_go.rule=Host(`${DOMAIN}`)
+        - traefik.http.routers.evolution_go.entrypoints=websecure
+        - traefik.http.routers.evolution_go.service=evolution_go
+        - traefik.http.routers.evolution_go.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.evolution_go.loadbalancer.server.port=4000
+        - traefik.http.services.evolution_go.loadbalancer.passHostHeader=true
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+volumes:
+  evolution_go_data:
+  evolution_go_logs:
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
