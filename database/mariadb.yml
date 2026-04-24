@@ -2,8 +2,11 @@ services:
   mariadb:
     image: mariadb:latest
     hostname: mariadb
-    ports: 
-      - "3306:3306"
+    ports:
+      - target: 3306
+        published: 3306
+        protocol: tcp
+        mode: host
     volumes:
       - mariadb_data:/var/lib/mysql
     environment:
