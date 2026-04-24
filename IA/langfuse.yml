@@ -47,6 +47,7 @@ x-langfuse-env: &langfuse-env
 
 
 services:
+
   langfuse-worker:
     image: langfuse/langfuse-worker:latest
     restart: always
@@ -69,6 +70,7 @@ services:
           delay: 30s
           order: start-first
           failure_action: rollback
+
   langfuse-web:
     image: langfuse/langfuse:latest
     restart: always
@@ -103,36 +105,6 @@ services:
         order: start-first
         failure_action: rollback
 
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    restart: always
-    networks:
-      - dev-network
-    user: "101:101"
-    environment:
-      CLICKHOUSE_DB: langfuse
-      CLICKHOUSE_USER: admin
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
-    volumes:
-      - langfuse_clickhouse_data:/var/lib/clickhouse
-      - langfuse_clickhouse_logs:/var/log/clickhouse-server
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 1s
-    deploy:
-        mode: replicated
-        replicas: 1
-        placement:
-          constraints:
-            - node.role == manager
-        resources:
-          limits:
-            cpus: "1"
-            memory: 2048M
-
   langfuse-redis:
     image: redis:alpine
     restart: always
@@ -161,8 +133,6 @@ services:
             memory: 1024M
 
 volumes:
-  langfuse_clickhouse_data:
-  langfuse_clickhouse_logs:
   langfuse_redis_data:
 
 networks:
