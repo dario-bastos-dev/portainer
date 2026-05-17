@@ -55,7 +55,7 @@ x-shared-env: &chat-env # Configurações Gerais
 
 services:
   chat-redis:
-    image: redis:8-alpine
+    image: redis:alpine
     hostname: chat-redis
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
@@ -70,7 +70,7 @@ services:
           - node.role == manager
 
   chatwoot:
-    image: chatwoot/chatwoot:latest
+    image: dariobastosdev/chatwoot:latest
     hostname: chatwoot-app
     command: bundle exec rails s -p 3000 -b 0.0.0.0
     entrypoint: docker/entrypoints/rails.sh
@@ -102,7 +102,7 @@ services:
           - node.role == manager
 
   sidekiq:
-    image: chatwoot/chatwoot:latest
+    image: dariobastosdev/chatwoot:latest
     hostname: chatwoot-sidekiq
     command: bundle exec sidekiq -C config/sidekiq.yml
     environment: *chat-env

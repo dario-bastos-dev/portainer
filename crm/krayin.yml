@@ -1,7 +1,7 @@
 services:
   db-krayin:
     image: mariadb:latest
-    hostname: '{{.Service.Name}}.{{.Task.Slot}}'
+    hostname: mariadb
     volumes:
       - mariadb_data_krayin:/var/lib/mysql
     environment:
@@ -20,7 +20,7 @@ services:
 
   krayin:
     image: webkul/krayin:v2.1.2-https
-    hostname: '{{.Service.Name}}.{{.Task.Slot}}'
+    hostname: krayin
     volumes:
       - krayin_data:/var/www/html/
       # - /root/portainer/krayin/branding/favicon.ico:/var/www/html/laravel-crm/public/admin/build/assets/favicon-BtbgZBji.ico:ro Caso queira alterar o favicon descomente

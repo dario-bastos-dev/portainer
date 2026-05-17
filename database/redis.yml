@@ -1,10 +1,12 @@
 services:
   redis:
     image: redis/redis-stack:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: redis-stack
     volumes:
       - redis_data_service:/data
-      - /root/portainer/redis/redis.conf:/redis-stack.conf:ro
+    configs:
+      - source: redis_conf
+        target: /redis-stack.conf
     networks:
       - dev-network
       - traefik-public
@@ -14,7 +16,7 @@ services:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.redis.rule=Host(`redis.<YOUR_DOMAIN>`)
+        - traefik.http.routers.redis.rule=Host(`redis.${DOMAIN}`)
         - traefik.http.routers.redis.entrypoints=websecure
         - traefik.http.routers.redis.service=redis
         - traefik.http.routers.redis.tls.certresolver=letsencrypt
@@ -36,3 +38,7 @@ networks:
     external: true
   traefik-public:
     external: true
+
+configs:
+  redis_conf:
+    external: true 

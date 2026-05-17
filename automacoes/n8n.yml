@@ -9,11 +9,10 @@ x-n8n-shared-env: &n8n-shared-env
   - GENERIC_TIMEZONE=America/Sao_Paulo
   - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
   # Configuração de Execução dos Workflows (Runners)
-  - N8N_RUNNERS_ENABLED=true
   - N8N_RUNNERS_MODE=external
-  # - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
-  # - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
-  # - N8N_RUNNERS_TASK_REQUEST_TIMEOUT=120
+  - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
+  - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
+  - N8N_RUNNERS_TASK_REQUEST_TIMEOUT=120
   - N8N_NATIVE_PYTHON_RUNNER=true
   - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
   # Configuração do Banco de Dados
@@ -113,7 +112,7 @@ services:
   # N8N Editor - Interface Web
   n8n_editor:
     image: n8nio/n8n:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: n8n_editor
     command: start
     networks:
       - dev-network
@@ -149,7 +148,7 @@ services:
   # N8N Webhooks - Servidor de Webhooks
   n8n_webhook:
     image: n8nio/n8n:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: n8n_webhook
     command: webhook
     networks:
       - dev-network
@@ -185,7 +184,7 @@ services:
   # N8N MCP API - Servidor MCP (v1.88+)
   n8n_mcp_api:
     image: n8nio/n8n:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: n8n_mcp_api
     command: webhook
     networks:
       - dev-network
@@ -225,52 +224,38 @@ services:
         order: start-first
         failure_action: rollback
 
-  # Pareamento dinâmico: Worker x Runner
-  # n8n_broker_lb:
-  #     image: haproxy:alpine
-  #     networks:
-  #       - dev-network
-  #     deploy:
-  #       replicas: 1
-  #       placement:
-  #         constraints:
-  #           - node.labels.type == app-host
-  #     configs:
-  #     - source: haproxy_broker_cfg
-  #       target: /usr/local/etc/haproxy/haproxy.cfg
-
   # N8N Runners - Execução de JavaScript e Python
-  # n8n_runners:
-  #   image: n8nio/runners:latest
-  #   hostname: "{{.Service.Name}}.{{.Task.Slot}}"
-  #   command: ["javascript", "python"]
-  #   networks:
-  #     - dev-network
-  #   volumes:
-  #     - n8n_data:/home/node/.n8n
-  #   environment:
-  #     - N8N_RUNNERS_TASK_BROKER_URI=http://n8n_broker_lb:5679
-  #     - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
-  #   deploy:
-  #     mode: replicated
-  #     replicas: 1
-  #     placement:
-  #       constraints:
-  #         - node.role == manager
-  #     resources:
-  #       limits:
-  #         cpus: "1"
-  #         memory: 1024M
-  #     update_config:
-  #       parallelism: 1
-  #       delay: 30s
-  #       order: start-first
-  #       failure_action: rollback
+  n8n_runners_1:
+    image: n8nio/runners:latest
+    hostname: n8n_runners_1
+    command: ["javascript", "python"]
+    networks:
+      - dev-network
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n_worker_1:5679
+      - N8N_RUNNERS_AUTH_TOKEN=${RUNNERS_AUTH_TOKEN}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024M
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   # N8N Workers - Processamento de Filas
-  n8n_worker:
+  n8n_worker_1:
     image: n8nio/n8n:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: n8n_worker_1
     command: worker --concurrency=20
     networks:
       - dev-network

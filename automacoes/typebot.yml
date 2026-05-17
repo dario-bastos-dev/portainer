@@ -1,7 +1,7 @@
 services:
   type-redis:
-    image: redis:8-alpine
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    image: redis:alpine
+    hostname: redis_typebot
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:
       - type_redis_data:/data
@@ -17,7 +17,7 @@ services:
 
   typebot-builder:
     image: baptistearno/typebot-builder:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: typebot_builder
     environment:
       # General Settings
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
@@ -89,7 +89,7 @@ services:
 
   typebot-viewer:
     image: baptistearno/typebot-viewer:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: typebot_viewer
     environment:
       # General Settings
       - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}

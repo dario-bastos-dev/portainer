@@ -1,6 +1,6 @@
 service:
   baserow:
-   hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+   hostname: baserow
    image: baserow/baserow:latest
    environment:
       # Configuração Front-end
@@ -33,7 +33,7 @@ service:
         - traefik.enable=true
 
         # --- Roteador ---
-        - traefik.http.routers.baserow.rule=Host(`baserow.<YOUR_DOMAIN>`)
+        - traefik.http.routers.baserow.rule=Host(`${BASEROW_PUBLIC_URL}`)
         - traefik.http.routers.baserow.entrypoints=websecure
         - traefik.http.routers.baserow.service=baserow
         - traefik.http.routers.baserow.tls.certresolver=letsencrypt

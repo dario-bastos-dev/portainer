@@ -1,6 +1,6 @@
 services:
   evo-redis:
-    image: redis:8-alpine
+    image: redis:alpine
     hostname: evolution-redis
     command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
     volumes:

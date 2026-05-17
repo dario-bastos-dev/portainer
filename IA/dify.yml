@@ -4,7 +4,7 @@ x-shared-env: &dify-env
   DEPLOY_ENV: PRODUCTION
   SERVER_WORKER_AMOUNT: 3
   # Cookies Cross-Domain
-  COOKIE_DOMAIN: "studiotriplea.com.br"
+  COOKIE_DOMAIN: "${DOMAIN}"
   NEXT_PUBLIC_COOKIE_DOMAIN: "1"
   # CORS
   WEB_API_CORS_ALLOW_ORIGINS: "*"
