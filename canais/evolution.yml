@@ -13,6 +13,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   evolution:
     image: evoapicloud/evolution-api:latest
@@ -87,6 +92,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 volumes:
   evolution_instances:

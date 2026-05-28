@@ -13,6 +13,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 
   typebot-builder:
@@ -86,6 +91,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   typebot-viewer:
     image: baptistearno/typebot-viewer:latest
@@ -158,6 +168,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 volumes:
   type_redis_data:

@@ -68,6 +68,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   chatwoot:
     image: dariobastosdev/chatwoot:latest
@@ -100,6 +105,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   sidekiq:
     image: dariobastosdev/chatwoot:latest
@@ -117,6 +127,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 volumes:
   chatwoot_data:

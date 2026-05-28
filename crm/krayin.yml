@@ -82,6 +82,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 volumes:
   mariadb_data_krayin:

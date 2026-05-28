@@ -52,6 +52,11 @@ services:
       resources:
         limits:
           memory: 1024M
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
     healthcheck:
         test: curl http://localhost:8080
         interval: 30s
@@ -78,6 +83,11 @@ services:
       resources:
         limits:
           memory: 512M
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   mautic_worker:
     image: mautic/mautic:latest
@@ -99,6 +109,11 @@ services:
       resources:
         limits:
           memory: 512M
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
 volumes:
   mautic_config:

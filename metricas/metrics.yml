@@ -1,7 +1,7 @@
 services:
   prometheus:
     image: prom/prometheus:latest
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -30,10 +30,15 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   grafana:
     image: grafana/grafana:latest-ubuntu # Use a versão mais recente do Grafana baseada em Ubuntu ou normal "latest"
-    hostname: "{{.Service.Name}}.{{.Task.Slot}}"
+    hostname: grafana
     environment:
       - GF_SERVER_ROOT_URL=https://grafana.<SEU_DOMINIO>
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
@@ -58,6 +63,11 @@ services:
       placement:
         constraints:
           - node.role == manager
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
 
   # SERVIÇOS DE OBSERVABILIDADE
 
