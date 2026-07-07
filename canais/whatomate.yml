@@ -1,0 +1,69 @@
+services:
+  # Whatomate app
+  whatomate_app:
+    image: shridh0r/whatomate:latest
+    hostname: whatomate_app
+    command: ["server", "-migrate", "-config", "/app/config.toml"]
+    environment:
+      TZ: UTC
+      # PostgreSQL
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: whatomate
+    networks:
+      - traefik-public
+      - dev-network
+    volumes:
+      - whatomate_uploads:/app/uploads:rw
+      - ./config.toml:/app/config.toml:ro
+    deploy:
+      labels:
+        # --- Configuração do Traefik ---
+        - traefik.enable=true
+
+        # --- Roteador ---
+        - traefik.http.routers.whatomate_app.rule=Host(`${DOMAIN}`)
+        - traefik.http.routers.whatomate_app.entrypoints=websecure
+        - traefik.http.routers.whatomate_app.service=whatomate_app
+        - traefik.http.routers.whatomate_app.tls.certresolver=letsencrypt
+        
+        # --- Serviço ---
+        - traefik.http.services.whatomate_app.loadbalancer.server.port=8080
+        - traefik.http.services.whatomate_app.loadbalancer.passHostHeader=true
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+
+  # Redis
+  whatomate_redis:
+    image: redis:alpine
+    hostname: whatomate_redis
+    networks:
+      - dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - whatomate_redis-data:/data
+
+networks:
+  dev-network:
+    external: true
+  traefik-public:
+    external: true
+
+volumes:
+  whatomate_redis-data:
+  whatomate_uploads:

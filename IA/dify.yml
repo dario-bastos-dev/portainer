@@ -29,6 +29,7 @@ x-shared-env: &dify-env
   # Plugin
   PLUGIN_DAEMON_KEY: ${PLUGIN_DAEMON_KEY}
   PLUGIN_DAEMON_URL: http://dify-plugin:5002
+  INNER_API_KEY: ${INNER_API_KEY}
   # Files
   FILES_URL: https://${CONSOLE_API_URL}
   INTERNAL_FILES_URL: http://dify-api:5001
@@ -50,11 +51,13 @@ x-shared-env: &dify-env
   DB_HOST: ${DB_HOST}
   DB_PORT: ${DB_PORT}
   DB_DATABASE: ${DB_DATABASE}
+  SQLALCHEMY_POOL_RECYCLE: 600
+  SQLALCHEMY_POOL_PRE_PING: 'true'
   # Redis (Interno)
   REDIS_HOST: dify-redis
   REDIS_PORT: 6379
-  REDIS_PASSWORD: ${REDIS_PASSWORD}
-  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@dify-redis:6379/0
+  REDIS_PASSWORD:
+  CELERY_BROKER_URL: redis://:@dify-redis:6379/0
   # Vector Database (Qdrant Externo)
   VECTOR_STORE: qdrant
   QDRANT_URL: ${QDRANT_URL}
@@ -76,7 +79,7 @@ x-shared-env: &dify-env
   DO_NOT_TRACK: 'true'
   # Proxies Internos
   SSRF_PROXY_HTTP_URL: http://dify-ssrf_proxy:3128
-  SSRF_PROXY_HTTPS_URL: http://dify-ssrf_proxy:312
+  SSRF_PROXY_HTTPS_URL: http://dify-ssrf_proxy:3128
 
 services:
   
@@ -86,15 +89,11 @@ services:
       <<: *dify-env
       # Service
       MODE: api
-    depends_on:
-      - dify-redis
-      - dify-sandbox
-      - dify-ssrf_proxy
     networks:
       - dev-network
       - traefik-public
     volumes:
-      - dify-api_data:/app/api/storage
+      - dify_api_data:/app/api/storage
     deploy:
       labels:
         - "traefik.enable=true"
@@ -128,14 +127,10 @@ services:
     environment:
       <<: *dify-env
       MODE: worker
-    depends_on:
-      - redis
-      - dify-sandbox
-      - dify-ssrf_proxy
     networks:
       - dev-network
     volumes:
-      - dify-api_data:/app/api/storage
+      - dify_api_data:/app/api/storage
     deploy:
       mode: replicated
       replicas: 1
@@ -161,8 +156,6 @@ services:
     environment:
       <<: *dify-env
       MODE: beat
-    depends_on:
-      - redis
     networks:
       - dev-network
     deploy:
@@ -186,7 +179,7 @@ services:
           memory: 128M
 
   dify-plugin:
-    image: langgenius/dify-plugin-daemon:main-local
+    image: langgenius/dify-plugin-daemon:latest-local
     environment:
       <<: *dify-env 
       LANG: C.UTF-8
@@ -198,26 +191,39 @@ services:
       PLUGIN_REMOTE_INSTALLING_HOST: 0.0.0.0
       PLUGIN_REMOTE_INSTALLING_PORT: 5003
       PLUGIN_WORKING_PATH: /app/storage/cwd
-      PLUGIN_PYTHON_ENV_INIT_TIMEOUT: 1200
-      PLUGIN_MAX_EXECUTION_TIMEOUT: 1200
-      PLUGIN_INSTALL_TIMEOUT: 1200
+      PLUGIN_PYTHON_ENV_INIT_TIMEOUT: 3600
+      PLUGIN_MAX_EXECUTION_TIMEOUT: 3600
+      PLUGIN_INSTALL_OFFLINE: "false"
+      ENABLE_NETWORK: "true"
+      UV_NO_OFFLINE: "1"
+      UV_NATIVE_TLS: "true"
+      PIP_INDEX_URL: "https://pypi.org/simple"
+      UV_INDEX_URL: "https://pypi.org/simple"
+      UV_HTTP_TIMEOUT: 1800
+      NO_PROXY: "pypi.org,files.pythonhosted.org,localhost,127.0.0.1"
     networks:
       - dev-network
-      - traefik-public
     volumes:
-      - dify-plugin_data:/app/storage
+      - dify_data:/app/storage
     deploy:
       mode: replicated
       replicas: 1
       placement:
         constraints:
-          - node.role == manager
+          - node.hostname == manager
       update_config:
         parallelism: 1
         delay: 15s
         order: start-first
         failure_action: rollback
         monitor: 30s
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 3072M
+        reservations:
+          cpus: "1.0"
+          memory: 1024M   
 
   dify-web:
     image: langgenius/dify-web:latest
@@ -259,9 +265,9 @@ services:
 
   dify-redis:
     image: redis:alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server
     volumes:
-      - dify-redis:/data
+      - redis_data-dify:/data
     networks:
       - dev-network
     deploy:
@@ -335,10 +341,10 @@ services:
         monitor: 30s
 
 volumes:
-  dify-redis:
+  redis_data-dify:
   dify-sandbox_deps:
-  dify-plugin_data:
-  dify-api_data:
+  dify_data:
+  dify_api_data:
 
 networks:
   dev-network:

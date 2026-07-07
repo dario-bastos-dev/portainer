@@ -1,27 +1,26 @@
-service:
+services:
   baserow:
-   hostname: baserow
    image: baserow/baserow:latest
+   hostname: baserow
    environment:
       # Configuração Front-end
-      - BASEROW_PUBLIC_URL=https://${BASEROW_PUBLIC_URL}
-      - BASEROW_MAX_IMPORT_FILE_SIZE_MB=512
+      BASEROW_PUBLIC_URL: "https://${BASEROW_PUBLIC_URL}"
+      BASEROW_MAX_IMPORT_FILE_SIZE_MB: 512
 
       # Configuração Back-end
-      - SECRET_KEY=${SECRET_KEY}
-      - BASEROW_BACKEND_LOG_LEVEL=INFO
-      - BASEROW_BACKEND_DATABASE_LOG_LEVEL=WARNING
+      SECRET_KEY: "${SECRET_KEY}"
+      BASEROW_BACKEND_LOG_LEVEL: "INFO"
+      BASEROW_BACKEND_DATABASE_LOG_LEVEL: "WARNING"
 
       # Banco de dados
-      - DATABASE_HOST=postgres
-      - DATABASE_USER=${POSTGRES_USER}
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=baserow
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
-      - BASEROW_TRIGGER_SYNC_TRMPLATES_AFTER_MIGRATION=false
-      - BASEROW_ROW_PAGE_SIZE_LIMIT=200
-      - BATCH_ROWS_SIZE_LIMIT=200
-      
+      DATABASE_HOST: "postgres"
+      DATABASE_USER: "${POSTGRES_USER}"
+      DATABASE_PORT: 5432
+      DATABASE_NAME: "baserow"
+      DATABASE_PASSWORD: "${POSTGRES_PASSWORD}"
+      BASEROW_TRIGGER_SYNC_TRMPLATES_AFTER_MIGRATION: "false"
+      BASEROW_ROW_PAGE_SIZE_LIMIT: 200
+      BATCH_ROWS_SIZE_LIMIT: 200
    volumes:
       - baserow_data:/baserow/data
    networks:

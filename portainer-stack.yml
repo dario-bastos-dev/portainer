@@ -16,19 +16,20 @@ services:
       - portainer_data:/data
     networks:
       - agent_network
-      - traefik-public # Conecta à rede do Traefik
+      - traefik-public
     deploy:
       mode: replicated
       replicas: 1
       placement:
-        constraints: [node.role == manager]
+        constraints: 
+          - node.role == manager
       labels:
         # --- Configuração do Traefik ---
         - "traefik.enable=true"
         - "traefik.docker.network=traefik-public"
 
         # --- Roteador para a Interface Web (UI) ---
-        - "traefik.http.routers.portainer-ui.rule=Host(`portainer.<YOUR_DOMAIN>`)"
+        - "traefik.http.routers.portainer-ui.rule=Host(`portainer.${DOMAIN}`)"
         - "traefik.http.routers.portainer-ui.entrypoints=websecure"
         - "traefik.http.routers.portainer-ui.service=portainer-ui-svc"
         - "traefik.http.routers.portainer-ui.tls.certresolver=letsencrypt"

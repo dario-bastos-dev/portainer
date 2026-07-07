@@ -20,7 +20,7 @@ services:
       - "--metrics.prometheus.buckets=0.1,0.3,1.2,5.0"
       
       # --- Resolvedor de Certificados (Let's Encrypt) ---
-      - "--certificatesresolvers.letsencrypt.acme.email=<YOUR_EMAIL>"
+      - "--certificatesresolvers.letsencrypt.acme.email=${EMAIL_ADDRESS}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
@@ -46,14 +46,14 @@ services:
       - "traefik.enable=true"
       
       # Roteador HTTP para o Dashboard
-      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.<YOUR_DOMAIN>`)"
+      - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.${DOMAIN}`)"
       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
       - "traefik.http.routers.traefik-dashboard.service=api@internal"
       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
       
       # Middleware de Autenticação
       - "traefik.http.routers.traefik-dashboard.middlewares=auth-dashboard"
-      - "traefik.http.middlewares.auth-dashboard.basicauth.users=<YOUR_USER>:<YOUR_HASHED_PASSWORD>" # <-- Gere uma senha criptografada com htpasswd
+      - "traefik.http.middlewares.auth-dashboard.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_HASHED_PASSWORD}" # <-- Gere uma senha criptografada com htpasswd
       - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
 
 networks:
